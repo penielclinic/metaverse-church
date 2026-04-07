@@ -70,7 +70,7 @@ export async function POST(req: Request) {
   const { data: pastors } = await supabase
     .from('profiles')
     .select('phone')
-    .in('role', ['pastor', 'mission_leader'])
+    .in('role', ['pastor', 'youth_pastor'])
     .not('phone', 'is', null)
 
   if (pastors) {

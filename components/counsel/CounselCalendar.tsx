@@ -63,7 +63,7 @@ export default function CounselCalendar({ onClose, onSuccess }: Props) {
     supabase
       .from('profiles')
       .select('id, name, role')
-      .in('role', ['pastor', 'mission_leader'])
+      .in('role', ['pastor', 'youth_pastor'])
       .then(({ data }) => {
         if (data) {
           setCounselors(data)
