@@ -1,101 +1,62 @@
-import Image from "next/image";
+import Link from 'next/link'
 
 export default function Home() {
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    <main className="min-h-screen bg-gradient-to-b from-indigo-950 via-indigo-900 to-purple-950 flex flex-col items-center justify-center px-6 text-white">
+      {/* 로고 / 타이틀 */}
+      <div className="text-center mb-12">
+        <div className="text-6xl mb-4">⛪</div>
+        <h1 className="text-4xl font-bold tracking-tight mb-2" style={{ wordBreak: 'keep-all' }}>
+          이음 메타버스
+        </h1>
+        <p className="text-indigo-300 text-lg" style={{ wordBreak: 'keep-all' }}>
+          해운대순복음교회 — 시공간을 초월한 예배와 교제
+        </p>
+      </div>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+      {/* 입장 버튼 */}
+      <div className="flex flex-col sm:flex-row gap-4 mb-16">
+        <Link
+          href="/world"
+          className="bg-indigo-500 hover:bg-indigo-400 active:scale-95 transition-all text-white font-semibold text-lg px-8 py-4 rounded-2xl text-center min-w-[180px]"
+        >
+          🌐 메타버스 입장
+        </Link>
+        <Link
+          href="/login"
+          className="border border-indigo-400 hover:bg-indigo-800 active:scale-95 transition-all text-indigo-200 font-semibold text-lg px-8 py-4 rounded-2xl text-center min-w-[180px]"
+        >
+          🔑 로그인
+        </Link>
+      </div>
+
+      {/* 공간 카드 */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 w-full max-w-lg mb-16">
+        {SPACES.map((space) => (
+          <Link
+            key={space.slug}
+            href={`/world/${space.slug}`}
+            className="bg-white/10 hover:bg-white/20 active:scale-95 transition-all rounded-2xl p-5 flex flex-col items-center gap-2 text-center"
           >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
-  );
+            <span className="text-3xl">{space.icon}</span>
+            <span className="text-sm font-medium whitespace-nowrap">{space.name}</span>
+          </Link>
+        ))}
+      </div>
+
+      {/* 하단 정보 */}
+      <p className="text-indigo-400 text-sm text-center" style={{ wordBreak: 'keep-all' }}>
+        성도 798명 · 셀 44개 · 선교회 12개
+      </p>
+    </main>
+  )
 }
+
+const SPACES = [
+  { slug: 'sanctuary', icon: '🕊️', name: '본당' },
+  { slug: 'plaza', icon: '🌿', name: '교제광장' },
+  { slug: 'prayer', icon: '🙏', name: '기도실' },
+  { slug: 'library', icon: '📖', name: '설교아카이브' },
+  { slug: 'cell/1', icon: '👥', name: '순 모임방' },
+  { slug: 'scholarship', icon: '🎓', name: '장학관' },
+]
