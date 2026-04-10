@@ -18,16 +18,20 @@ export default function HUD() {
         {/* 왼쪽: 아바타 레벨 + 이름 */}
         <div className="flex items-center gap-2 min-w-0">
           <Link href="/world/avatar">
-            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-indigo-100 overflow-hidden flex items-center justify-center hover:ring-2 hover:ring-indigo-400 transition-all cursor-pointer relative">
-              <AvatarPreview
-                skinTone={skinTone as 'light' | 'medium' | 'tan' | 'dark'}
-                hairStyle={hairStyle as 'short' | 'long' | 'curly' | 'bald' | 'ponytail'}
-                outfit={outfit as 'casual' | 'formal' | 'hanbok' | 'worship_team' | 'pastor'}
-                size={40}
-                faceOnly
-              />
-              {/* 레벨 뱃지 */}
-              <span className="absolute bottom-0 right-0 w-4 h-4 rounded-full bg-indigo-600 text-white text-[9px] font-bold flex items-center justify-center leading-none">
+            {/* relative 래퍼 — overflow-hidden 밖에서 뱃지 렌더링 */}
+            <div className="relative flex-shrink-0 w-10 h-10 cursor-pointer">
+              {/* 아바타 얼굴 원형 — overflow-hidden으로 원 밖 SVG 클립 */}
+              <div className="w-10 h-10 rounded-full bg-indigo-100 overflow-hidden hover:ring-2 hover:ring-indigo-400 transition-all">
+                <AvatarPreview
+                  skinTone={skinTone as 'light' | 'medium' | 'tan' | 'dark'}
+                  hairStyle={hairStyle as 'short' | 'long' | 'curly' | 'bald' | 'ponytail'}
+                  outfit={outfit as 'casual' | 'formal' | 'hanbok' | 'worship_team' | 'pastor'}
+                  size={40}
+                  faceOnly
+                />
+              </div>
+              {/* 레벨 뱃지 — overflow-hidden 바깥 absolute */}
+              <span className="absolute -bottom-0.5 -right-0.5 min-w-[16px] h-4 px-0.5 rounded-full bg-indigo-600 text-white text-[9px] font-bold flex items-center justify-center leading-none border border-white">
                 {level}
               </span>
             </div>
