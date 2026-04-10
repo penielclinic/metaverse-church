@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useAvatarStore } from '@/store/avatarStore'
 import { useWorldStore } from '@/store/worldStore'
 
@@ -15,9 +16,11 @@ export default function HUD() {
 
         {/* 왼쪽: 아바타 레벨 + 이름 */}
         <div className="flex items-center gap-2 min-w-0">
-          <div className="flex-shrink-0 w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center text-sm font-bold text-indigo-700">
-            {level}
-          </div>
+          <Link href="/world/avatar">
+            <div className="flex-shrink-0 w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center text-sm font-bold text-indigo-700 hover:bg-indigo-200 transition-colors cursor-pointer">
+              {level}
+            </div>
+          </Link>
           <div className="min-w-0">
             <div className="flex items-center gap-1">
               <span className="whitespace-nowrap text-sm font-semibold text-gray-800 truncate max-w-[80px]">
