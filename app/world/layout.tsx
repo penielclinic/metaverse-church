@@ -1,23 +1,26 @@
-import type { Metadata } from 'next'
+'use client'
+
+import { usePathname } from 'next/navigation'
 import HUD from '@/components/world/HUD'
 
-export const metadata: Metadata = {
-  title: '이음 메타버스 | 해운대순복음교회',
-  description: '시공간을 초월한 가상 교회 플랫폼',
-}
+// metadata는 client component에서 export 불가 — 별도 head 없이 전역 layout에 의존
 
 export default function WorldLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const pathname = usePathname()
+  const hideHUD = pathname === '/world/avatar'
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* 상단 HUD — 고정 */}
-      <HUD />
+      {/* 아바타 설정 페이지에서는 HUD 숨김 */}
+      {!hideHUD && <HUD />}
 
-      {/* 본문 — HUD 높이(56px)만큼 상단 패딩 */}
-      <main className="pt-14 min-h-screen">{children}</main>
+      <main className={hideHUD ? 'min-h-screen' : 'pt-14 min-h-screen'}>
+        {children}
+      </main>
     </div>
   )
 }
