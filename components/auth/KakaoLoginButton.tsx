@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase/client'
 import { useState } from 'react'
 
-export default function KakaoLoginButton(_props: { redirectTo?: string }) {
+export default function KakaoLoginButton() {
   const [isLoading, setIsLoading] = useState(false)
 
   async function handleLogin() {
