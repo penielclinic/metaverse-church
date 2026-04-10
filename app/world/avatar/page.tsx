@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { useAvatarStore } from '@/store/avatarStore'
 import AvatarPreview from '@/components/world/AvatarPreview'
 
@@ -32,18 +32,21 @@ const OUTFIT_OPTIONS: { value: Outfit; label: string; emoji: string }[] = [
   { value: 'pastor',       label: '목사',     emoji: '✝️' },
 ]
 
-function AvatarPageContent() {
+export default function AvatarPage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const isNew = searchParams.get('new') === 'true'
-
   const { setAvatar } = useAvatarStore()
 
+  // useSearchParams 대신 window.location 사용 — Suspense 불필요
+  const [isNew, setIsNew] = useState(false)
   const [skinTone, setSkinTone] = useState<SkinTone>('medium')
   const [hairStyle, setHairStyle] = useState<HairStyle>('short')
   const [outfit, setOutfit] = useState<Outfit>('casual')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    setIsNew(new URLSearchParams(window.location.search).get('new') === 'true')
+  }, [])
 
   // 기존 아바타 불러오기
   useEffect(() => {
@@ -221,14 +224,3 @@ function AvatarPageContent() {
   )
 }
 
-export default function AvatarPage() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-indigo-50 to-white">
-        <span className="text-gray-400 text-sm">불러오는 중...</span>
-      </div>
-    }>
-      <AvatarPageContent />
-    </Suspense>
-  )
-}
