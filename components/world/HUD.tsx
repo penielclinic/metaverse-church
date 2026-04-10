@@ -77,6 +77,14 @@ export default function HUD() {
             <span className="whitespace-nowrap">{totalOnline}명</span>
           </div>
 
+          {/* 아바타 편집 버튼 */}
+          <Link
+            href="/world/avatar"
+            className="text-xs px-3 py-1.5 rounded-full bg-indigo-100 text-indigo-700 font-semibold hover:bg-indigo-200 transition-colors whitespace-nowrap"
+          >
+            아바타
+          </Link>
+
           {/* 알림 아이콘 */}
           <button
             className="relative p-1.5 rounded-full hover:bg-gray-100 transition-colors"
