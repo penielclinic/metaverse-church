@@ -72,7 +72,7 @@ const SPACES = [
 export default function WorldPage() {
   const router = useRouter()
   const { setCurrentSpace, getSpaceUserCount } = useWorldStore()
-  const { name, level, skinTone, hairStyle, outfit } = useAvatarStore()
+  const { name, level, skinTone, gender, hairStyle, outfit } = useAvatarStore()
 
   const handleEnterSpace = (slug: string, name: string, path: string) => {
     setCurrentSpace(slug, name)
@@ -104,7 +104,8 @@ export default function WorldPage() {
           <div className="flex-shrink-0 w-14 h-14 rounded-full bg-white border-2 border-indigo-200 overflow-hidden flex items-center justify-center">
             <AvatarPreview
               skinTone={skinTone as 'light' | 'medium' | 'tan' | 'dark'}
-              hairStyle={hairStyle as 'short' | 'long' | 'curly' | 'bald' | 'ponytail'}
+              gender={gender}
+              hairStyle={hairStyle}
               outfit={outfit as 'casual' | 'formal' | 'hanbok' | 'worship_team' | 'pastor'}
               size={56}
               faceOnly

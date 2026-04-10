@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 
 export type GlowColor = 'purple' | 'gold' | 'blue' | 'none'
+export type Gender = 'male' | 'female'
 
 interface AvatarState {
   id: string | null
@@ -9,6 +10,7 @@ interface AvatarState {
   exp: number
   expToNext: number
   skinTone: string
+  gender: Gender
   hairStyle: string
   outfit: string
   badge: string | null
@@ -27,6 +29,7 @@ export const useAvatarStore = create<AvatarState>((set) => ({
   exp: 0,
   expToNext: 100,
   skinTone: 'medium',
+  gender: 'male',
   hairStyle: 'short',
   outfit: 'casual',
   badge: null,

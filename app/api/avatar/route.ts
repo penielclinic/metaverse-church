@@ -37,13 +37,16 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json()
-    const { skin_tone, hair_style, outfit } = body
+    const { skin_tone, gender, hair_style, outfit } = body
 
-    const validSkinTones = ['light', 'medium', 'tan', 'dark']
-    const validHairStyles = ['short', 'long', 'curly', 'bald', 'ponytail']
-    const validOutfits = ['casual', 'formal', 'hanbok', 'worship_team', 'pastor']
+    const validSkinTones  = ['light', 'medium', 'tan', 'dark']
+    const validGenders    = ['male', 'female']
+    const validHairStyles = ['short', 'sports', 'slickback', 'sidepart', 'curly', 'bald',
+                             'bob', 'long', 'wave', 'ponytail', 'bun', 'bangs']
+    const validOutfits    = ['casual', 'formal', 'hanbok', 'worship_team', 'pastor']
 
-    if (!validSkinTones.includes(skin_tone) || !validHairStyles.includes(hair_style) || !validOutfits.includes(outfit)) {
+    if (!validSkinTones.includes(skin_tone) || !validGenders.includes(gender) ||
+        !validHairStyles.includes(hair_style) || !validOutfits.includes(outfit)) {
       return NextResponse.json({ error: '유효하지 않은 값입니다.' }, { status: 400 })
     }
 
@@ -57,13 +60,13 @@ export async function POST(req: Request) {
     if (existing) {
       const { error } = await supabase
         .from('avatars')
-        .update({ skin_tone, hair_style, outfit, updated_at: new Date().toISOString() })
+        .update({ skin_tone, gender, hair_style, outfit, updated_at: new Date().toISOString() })
         .eq('user_id', user.id)
       if (error) return NextResponse.json({ error: '업데이트 실패' }, { status: 500 })
     } else {
       const { error } = await supabase
         .from('avatars')
-        .insert({ user_id: user.id, skin_tone, hair_style, outfit })
+        .insert({ user_id: user.id, skin_tone, gender, hair_style, outfit })
       if (error) return NextResponse.json({ error: '생성 실패' }, { status: 500 })
     }
 

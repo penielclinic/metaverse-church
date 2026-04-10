@@ -3,11 +3,10 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAvatarStore } from '@/store/avatarStore'
-import AvatarPreview from '@/components/world/AvatarPreview'
-
-type SkinTone = 'light' | 'medium' | 'tan' | 'dark'
-type HairStyle = 'short' | 'long' | 'curly' | 'bald' | 'ponytail'
-type Outfit = 'casual' | 'formal' | 'hanbok' | 'worship_team' | 'pastor'
+import AvatarPreview, {
+  MALE_HAIR_OPTIONS, FEMALE_HAIR_OPTIONS,
+  type SkinTone, type Gender, type Outfit,
+} from '@/components/world/AvatarPreview'
 
 const SKIN_OPTIONS: { value: SkinTone; label: string; color: string }[] = [
   { value: 'light',  label: '밝은',   color: '#FDDBB4' },
@@ -16,53 +15,50 @@ const SKIN_OPTIONS: { value: SkinTone; label: string; color: string }[] = [
   { value: 'dark',   label: '어두운', color: '#8D5524' },
 ]
 
-const HAIR_OPTIONS: { value: HairStyle; label: string; emoji: string }[] = [
-  { value: 'short',    label: '단발',   emoji: '💇' },
-  { value: 'long',     label: '장발',   emoji: '👩' },
-  { value: 'curly',    label: '곱슬',   emoji: '🌀' },
-  { value: 'bald',     label: '민머리', emoji: '🧑‍🦲' },
-  { value: 'ponytail', label: '묶음',   emoji: '🎀' },
-]
-
 const OUTFIT_OPTIONS: { value: Outfit; label: string; emoji: string }[] = [
-  { value: 'casual',       label: '캐주얼',   emoji: '👕' },
-  { value: 'formal',       label: '정장',     emoji: '👔' },
-  { value: 'hanbok',       label: '한복',     emoji: '🎎' },
-  { value: 'worship_team', label: '찬양팀',   emoji: '🎵' },
-  { value: 'pastor',       label: '목사',     emoji: '✝️' },
+  { value: 'casual',       label: '캐주얼', emoji: '👕' },
+  { value: 'formal',       label: '정장',   emoji: '👔' },
+  { value: 'hanbok',       label: '한복',   emoji: '🎎' },
+  { value: 'worship_team', label: '찬양팀', emoji: '🎵' },
+  { value: 'pastor',       label: '목사 가운', emoji: '✝️' },
 ]
 
 export default function AvatarPage() {
   const router = useRouter()
   const { setAvatar } = useAvatarStore()
 
-  // useSearchParams 대신 window.location 사용 — Suspense 불필요
-  const [isNew, setIsNew] = useState(false)
+  const [isNew,    setIsNew]    = useState(false)
+  const [gender,   setGender]   = useState<Gender>('male')
   const [skinTone, setSkinTone] = useState<SkinTone>('medium')
-  const [hairStyle, setHairStyle] = useState<HairStyle>('short')
-  const [outfit, setOutfit] = useState<Outfit>('casual')
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [hairStyle, setHairStyle] = useState('short')
+  const [outfit,   setOutfit]   = useState<Outfit>('casual')
+  const [saving,   setSaving]   = useState(false)
+  const [error,    setError]    = useState<string | null>(null)
 
   useEffect(() => {
     setIsNew(new URLSearchParams(window.location.search).get('new') === 'true')
   }, [])
 
-  // 기존 아바타 불러오기
+  // DB에서 기존 아바타 불러오기
   useEffect(() => {
-    async function load() {
-      const res = await fetch('/api/avatar')
-      if (res.ok) {
-        const { avatar } = await res.json()
-        if (avatar) {
-          setSkinTone(avatar.skin_tone)
-          setHairStyle(avatar.hair_style)
-          setOutfit(avatar.outfit)
-        }
-      }
-    }
-    if (!isNew) load()
+    if (isNew) return
+    fetch('/api/avatar').then(r => r.ok ? r.json() : null).then(data => {
+      if (!data?.avatar) return
+      const a = data.avatar
+      if (a.skin_tone)  setSkinTone(a.skin_tone)
+      if (a.gender)     setGender(a.gender)
+      if (a.hair_style) setHairStyle(a.hair_style)
+      if (a.outfit)     setOutfit(a.outfit)
+    })
   }, [isNew])
+
+  // 성별 바꾸면 헤어를 해당 성별 첫번째로 리셋
+  function handleGenderChange(g: Gender) {
+    setGender(g)
+    setHairStyle(g === 'male' ? MALE_HAIR_OPTIONS[0].value : FEMALE_HAIR_OPTIONS[0].value)
+  }
+
+  const hairOptions = gender === 'male' ? MALE_HAIR_OPTIONS : FEMALE_HAIR_OPTIONS
 
   async function handleSave() {
     setSaving(true)
@@ -71,15 +67,14 @@ export default function AvatarPage() {
       const res = await fetch('/api/avatar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ skin_tone: skinTone, hair_style: hairStyle, outfit }),
+        body: JSON.stringify({ skin_tone: skinTone, gender, hair_style: hairStyle, outfit }),
       })
       if (!res.ok) {
-        const data = await res.json()
-        setError(data.error ?? '저장 실패')
+        const d = await res.json()
+        setError(d.error ?? '저장 실패')
         return
       }
-      // zustand 업데이트
-      setAvatar({ skinTone, hairStyle, outfit })
+      setAvatar({ skinTone, gender, hairStyle, outfit })
       router.push('/world')
     } catch {
       setError('네트워크 오류가 발생했습니다.')
@@ -94,42 +89,53 @@ export default function AvatarPage() {
 
         {/* 헤더 */}
         <div className="text-center mb-6">
-          <h1
-            className="text-2xl font-bold text-gray-800"
-            style={{ wordBreak: 'keep-all' }}
-          >
+          <h1 className="text-2xl font-bold text-gray-800" style={{ wordBreak: 'keep-all' }}>
             {isNew ? '아바타를 만들어보세요 👋' : '아바타 꾸미기'}
           </h1>
-          {isNew && (
-            <p
-              className="mt-1 text-sm text-gray-500"
-              style={{ wordBreak: 'keep-all' }}
-            >
-              이음 메타버스에서 나를 대표할 아바타를 선택해주세요
-            </p>
-          )}
         </div>
 
         {/* 미리보기 */}
         <div className="flex justify-center mb-6">
-          <div className="w-32 h-32 rounded-full bg-indigo-100 flex items-center justify-center shadow-inner">
+          <div className="w-36 h-36 rounded-full bg-indigo-100 flex items-center justify-center shadow-inner">
             <AvatarPreview
-              skinTone={skinTone}
-              hairStyle={hairStyle}
-              outfit={outfit}
-              size={100}
+              skinTone={skinTone} gender={gender}
+              hairStyle={hairStyle} outfit={outfit}
+              size={110}
             />
           </div>
         </div>
 
-        {/* 옵션 카드 */}
-        <div className="space-y-5">
+        <div className="space-y-6">
+
+          {/* 성별 */}
+          <section>
+            <h2 className="text-sm font-semibold text-gray-600 mb-2">성별</h2>
+            <div className="flex gap-3">
+              {([
+                { value: 'male',   label: '남성', emoji: '👨' },
+                { value: 'female', label: '여성', emoji: '👩' },
+              ] as { value: Gender; label: string; emoji: string }[]).map(opt => (
+                <button
+                  key={opt.value}
+                  onClick={() => handleGenderChange(opt.value)}
+                  className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border-2 transition-all text-sm font-medium ${
+                    gender === opt.value
+                      ? 'border-indigo-500 bg-indigo-50 text-indigo-700 shadow-sm'
+                      : 'border-gray-200 bg-white text-gray-600'
+                  }`}
+                >
+                  <span className="text-xl">{opt.emoji}</span>
+                  <span>{opt.label}</span>
+                </button>
+              ))}
+            </div>
+          </section>
 
           {/* 피부색 */}
           <section>
             <h2 className="text-sm font-semibold text-gray-600 mb-2">피부색</h2>
             <div className="flex gap-3">
-              {SKIN_OPTIONS.map((opt) => (
+              {SKIN_OPTIONS.map(opt => (
                 <button
                   key={opt.value}
                   onClick={() => setSkinTone(opt.value)}
@@ -140,10 +146,8 @@ export default function AvatarPage() {
                   }`}
                   style={{ minWidth: 60 }}
                 >
-                  <span
-                    className="w-8 h-8 rounded-full border border-gray-300"
-                    style={{ background: opt.color }}
-                  />
+                  <span className="w-8 h-8 rounded-full border border-gray-300 block"
+                        style={{ background: opt.color }} />
                   <span className="text-xs text-gray-600 whitespace-nowrap">{opt.label}</span>
                 </button>
               ))}
@@ -153,12 +157,12 @@ export default function AvatarPage() {
           {/* 헤어스타일 */}
           <section>
             <h2 className="text-sm font-semibold text-gray-600 mb-2">헤어스타일</h2>
-            <div className="flex flex-wrap gap-2">
-              {HAIR_OPTIONS.map((opt) => (
+            <div className="grid grid-cols-3 gap-2">
+              {hairOptions.map(opt => (
                 <button
                   key={opt.value}
                   onClick={() => setHairStyle(opt.value)}
-                  className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl border-2 transition-all text-sm ${
+                  className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border-2 transition-all text-sm ${
                     hairStyle === opt.value
                       ? 'border-indigo-500 bg-indigo-50 font-semibold shadow-sm'
                       : 'border-gray-200 bg-white text-gray-600'
@@ -174,12 +178,12 @@ export default function AvatarPage() {
           {/* 옷차림 */}
           <section>
             <h2 className="text-sm font-semibold text-gray-600 mb-2">옷차림</h2>
-            <div className="flex flex-wrap gap-2">
-              {OUTFIT_OPTIONS.map((opt) => (
+            <div className="grid grid-cols-3 gap-2">
+              {OUTFIT_OPTIONS.map(opt => (
                 <button
                   key={opt.value}
                   onClick={() => setOutfit(opt.value)}
-                  className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl border-2 transition-all text-sm ${
+                  className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border-2 transition-all text-sm ${
                     outfit === opt.value
                       ? 'border-indigo-500 bg-indigo-50 font-semibold shadow-sm'
                       : 'border-gray-200 bg-white text-gray-600'
@@ -193,14 +197,12 @@ export default function AvatarPage() {
           </section>
         </div>
 
-        {/* 에러 */}
         {error && (
           <p className="mt-4 text-sm text-red-500 text-center" style={{ wordBreak: 'keep-all' }}>
             {error}
           </p>
         )}
 
-        {/* 저장 버튼 */}
         <button
           onClick={handleSave}
           disabled={saving}
@@ -210,7 +212,6 @@ export default function AvatarPage() {
           {saving ? '저장 중...' : isNew ? '아바타 완성! 메타버스 입장 →' : '저장하기'}
         </button>
 
-        {/* 신규 유저가 아닌 경우 취소 */}
         {!isNew && (
           <button
             onClick={() => router.back()}
@@ -223,4 +224,3 @@ export default function AvatarPage() {
     </div>
   )
 }
-
