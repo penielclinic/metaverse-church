@@ -3,19 +3,19 @@
 import { createClient } from '@/lib/supabase/client'
 import { useState } from 'react'
 
-export default function KakaoLoginButton() {
+export default function KakaoLoginButton({ redirectTo }: { redirectTo?: string }) {
   const [isLoading, setIsLoading] = useState(false)
 
   async function handleLogin() {
     setIsLoading(true)
     const supabase = createClient()
+    const callbackUrl = redirectTo
+      ? `${location.origin}/auth/callback?next=${encodeURIComponent(redirectTo)}`
+      : `${location.origin}/auth/callback`
     await supabase.auth.signInWithOAuth({
       provider: 'kakao',
-      options: {
-        redirectTo: `${location.origin}/auth/callback`,
-      },
+      options: { redirectTo: callbackUrl },
     })
-    // 리다이렉트 후에는 실행되지 않지만 안전하게 복구
     setIsLoading(false)
   }
 

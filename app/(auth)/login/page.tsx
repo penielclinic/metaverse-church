@@ -3,7 +3,7 @@ import KakaoLoginButton from '@/components/auth/KakaoLoginButton'
 export default function LoginPage({
   searchParams,
 }: {
-  searchParams: { error?: string }
+  searchParams: { error?: string; redirectTo?: string }
 }) {
   return (
     <main className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-blue-50 to-white px-6">
@@ -30,7 +30,7 @@ export default function LoginPage({
           카카오 계정으로 간편하게 로그인하세요
         </p>
 
-        <KakaoLoginButton />
+        <KakaoLoginButton redirectTo={searchParams.redirectTo} />
 
         {searchParams.error && (
           <p className="text-center text-sm text-red-500" style={{ wordBreak: 'keep-all' }}>
