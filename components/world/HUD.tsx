@@ -3,9 +3,10 @@
 import Link from 'next/link'
 import { useAvatarStore } from '@/store/avatarStore'
 import { useWorldStore } from '@/store/worldStore'
+import AvatarPreview from '@/components/world/AvatarPreview'
 
 export default function HUD() {
-  const { name, level, exp, expToNext, badge } = useAvatarStore()
+  const { name, level, exp, expToNext, badge, skinTone, hairStyle, outfit } = useAvatarStore()
   const { currentSpaceName, totalOnline } = useWorldStore()
 
   const expPercent = Math.min(Math.round((exp / expToNext) * 100), 100)
@@ -17,8 +18,18 @@ export default function HUD() {
         {/* 왼쪽: 아바타 레벨 + 이름 */}
         <div className="flex items-center gap-2 min-w-0">
           <Link href="/world/avatar">
-            <div className="flex-shrink-0 w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center text-sm font-bold text-indigo-700 hover:bg-indigo-200 transition-colors cursor-pointer">
-              {level}
+            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-indigo-100 overflow-hidden flex items-center justify-center hover:ring-2 hover:ring-indigo-400 transition-all cursor-pointer relative">
+              <AvatarPreview
+                skinTone={skinTone as 'light' | 'medium' | 'tan' | 'dark'}
+                hairStyle={hairStyle as 'short' | 'long' | 'curly' | 'bald' | 'ponytail'}
+                outfit={outfit as 'casual' | 'formal' | 'hanbok' | 'worship_team' | 'pastor'}
+                size={40}
+                faceOnly
+              />
+              {/* 레벨 뱃지 */}
+              <span className="absolute bottom-0 right-0 w-4 h-4 rounded-full bg-indigo-600 text-white text-[9px] font-bold flex items-center justify-center leading-none">
+                {level}
+              </span>
             </div>
           </Link>
           <div className="min-w-0">

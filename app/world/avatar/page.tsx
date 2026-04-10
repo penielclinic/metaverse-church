@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAvatarStore } from '@/store/avatarStore'
 import AvatarPreview from '@/components/world/AvatarPreview'
@@ -32,7 +32,7 @@ const OUTFIT_OPTIONS: { value: Outfit; label: string; emoji: string }[] = [
   { value: 'pastor',       label: '목사',     emoji: '✝️' },
 ]
 
-export default function AvatarPage() {
+function AvatarPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const isNew = searchParams.get('new') === 'true'
@@ -218,5 +218,17 @@ export default function AvatarPage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function AvatarPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-indigo-50 to-white">
+        <span className="text-gray-400 text-sm">불러오는 중...</span>
+      </div>
+    }>
+      <AvatarPageContent />
+    </Suspense>
   )
 }

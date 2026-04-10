@@ -20,6 +20,7 @@ interface Props {
   hairStyle: HairStyle
   outfit: Outfit
   size?: number
+  faceOnly?: boolean
 }
 
 // 옷 색상
@@ -67,15 +68,17 @@ function HairSVG({ style, color }: { style: HairStyle; color: string }) {
   }
 }
 
-export default function AvatarPreview({ skinTone, hairStyle, outfit, size = 120 }: Props) {
+export default function AvatarPreview({ skinTone, hairStyle, outfit, size = 120, faceOnly = false }: Props) {
   const skin = SKIN_COLORS[skinTone] ?? SKIN_COLORS.medium
   const { body: outfitBody, collar: outfitCollar } = OUTFIT_COLORS[outfit] ?? OUTFIT_COLORS.casual
+  // faceOnly: 얼굴+머리 영역만 잘라서 표시 (HUD 아이콘용)
+  const viewBox = faceOnly ? '20 8 60 60' : '0 0 100 100'
 
   return (
     <svg
       width={size}
       height={size}
-      viewBox="0 0 100 100"
+      viewBox={viewBox}
       xmlns="http://www.w3.org/2000/svg"
       aria-label="아바타 미리보기"
     >
