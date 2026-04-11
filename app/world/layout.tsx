@@ -3,9 +3,8 @@
 import { useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import HUD from '@/components/world/HUD'
+import SpaceSidebar from '@/components/world/SpaceSidebar'
 import { useAvatarStore } from '@/store/avatarStore'
-
-// metadata는 client component에서 export 불가 — 별도 head 없이 전역 layout에 의존
 
 export default function WorldLayout({
   children,
@@ -13,7 +12,7 @@ export default function WorldLayout({
   children: React.ReactNode
 }) {
   const pathname = usePathname()
-  const hideHUD = pathname === '/world/avatar'
+  const isAvatarPage = pathname === '/world/avatar'
   const { setAvatar } = useAvatarStore()
 
   // 앱 첫 로드 시 DB에 저장된 아바타 데이터를 Zustand에 반영
@@ -22,8 +21,8 @@ export default function WorldLayout({
       .then((res) => res.ok ? res.json() : null)
       .then((data) => {
         if (data?.avatar) {
-          const { skin_tone, hair_style, outfit } = data.avatar
-          setAvatar({ skinTone: skin_tone, hairStyle: hair_style, outfit })
+          const { skin_tone, gender, hair_style, outfit } = data.avatar
+          setAvatar({ skinTone: skin_tone, gender: gender ?? 'male', hairStyle: hair_style, outfit })
         }
       })
       .catch(() => {/* 비로그인 상태 등 무시 */})
@@ -31,10 +30,16 @@ export default function WorldLayout({
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* 아바타 설정 페이지에서는 HUD 숨김 */}
-      {!hideHUD && <HUD />}
+      {/* 아바타 설정 페이지에서는 HUD·사이드바 숨김 */}
+      {!isAvatarPage && <HUD />}
+      {!isAvatarPage && <SpaceSidebar />}
 
-      <main className={hideHUD ? 'min-h-screen' : 'pt-14 min-h-screen'}>
+      <main className={[
+        'min-h-screen',
+        isAvatarPage ? '' : 'pt-14',          // HUD 높이(56px)
+        isAvatarPage ? '' : 'md:pl-20',       // 사이드바 너비(80px)
+        isAvatarPage ? '' : 'pb-20 md:pb-0',  // 모바일 하단 탭바 높이
+      ].join(' ')}>
         {children}
       </main>
     </div>
