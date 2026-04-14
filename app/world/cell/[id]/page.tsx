@@ -207,13 +207,14 @@ export default function CellRoomPage() {
       if (error || !inserted) return
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const ins = inserted as any
       const newNote: CellNote = {
-        id: (inserted as any).id,
+        id: ins.id,
         userId: myUserId,
         authorName: myProfile.name,
         content: noteInput.trim(),
         color: noteColor,
-        createdAt: (inserted as any).created_at,
+        createdAt: ins.created_at,
       }
       setNotes((prev) => [newNote, ...prev])
       await channelRef.current!.send({ type: 'broadcast', event: 'note_add', payload: newNote })
