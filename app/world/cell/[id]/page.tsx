@@ -17,6 +17,7 @@ interface Message {
 interface Member {
   userId: string
   name: string
+  titles: string[]
   skinTone: SkinTone
   gender: Gender
   hairStyle: string
@@ -35,7 +36,8 @@ export default function CellRoomPage() {
   const [input, setInput] = useState('')
   const [myUserId, setMyUserId] = useState<string | null>(null)
   const [myProfile, setMyProfile] = useState<Member | null>(null)
-  const [authorized, setAuthorized] = useState<boolean | null>(null) // null=로딩중
+  const [authorized, setAuthorized] = useState<boolean | null>(null)
+  const [profileCard, setProfileCard] = useState<Member | null>(null) // 클릭한 상대 아바타
   const bottomRef = useRef<HTMLDivElement>(null)
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
 
@@ -55,11 +57,13 @@ export default function CellRoomPage() {
       setCellName(cell?.name ?? `순 ${id}`)
 
       // 프로필 + 아바타
-      const { data: profile } = await supabase
+      const { data: profileRaw } = await supabase
         .from('profiles')
-        .select('name, role, cell_id')
+        .select('name, role, cell_id, titles')
         .eq('id', user.id)
         .single()
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const profile = profileRaw as any
 
       const { data: avatarRaw } = await supabase
         .from('avatars')
@@ -77,6 +81,7 @@ export default function CellRoomPage() {
       const me: Member = {
         userId: user.id,
         name: profile?.name ?? '성도',
+        titles: Array.isArray(profile?.titles) ? profile.titles : [],
         skinTone: (avatar?.skin_tone ?? 'medium') as SkinTone,
         gender: (avatar?.gender ?? 'male') as Gender,
         hairStyle: avatar?.hair_style ?? 'short',
@@ -179,13 +184,20 @@ export default function CellRoomPage() {
         </div>
       </div>
 
-      {/* 접속자 아바타 띠 */}
+      {/* 접속자 아바타 띠 — 클릭 시 프로필 카드 표시 */}
       {members.length > 0 && (
         <div className="flex items-center gap-3 px-4 py-2 bg-indigo-50 border-b border-indigo-100 flex-shrink-0 overflow-x-auto">
           {members.map((m) => (
-            <div key={m.userId} className="flex flex-col items-center gap-0.5 flex-shrink-0">
+            <button
+              key={m.userId}
+              onClick={() => setProfileCard(profileCard?.userId === m.userId ? null : m)}
+              className="flex flex-col items-center gap-0.5 flex-shrink-0 focus:outline-none"
+            >
               <div className="relative w-10 h-10">
-                <div className="w-10 h-10 rounded-full bg-white border-2 border-indigo-200 overflow-hidden">
+                <div className={[
+                  'w-10 h-10 rounded-full bg-white border-2 overflow-hidden transition-all',
+                  profileCard?.userId === m.userId ? 'border-indigo-500 scale-110' : 'border-indigo-200',
+                ].join(' ')}>
                   <AvatarPreview
                     skinTone={m.skinTone}
                     gender={m.gender}
@@ -202,7 +214,7 @@ export default function CellRoomPage() {
               <span className="text-[9px] text-gray-500 whitespace-nowrap max-w-[40px] truncate">
                 {m.name}
               </span>
-            </div>
+            </button>
           ))}
         </div>
       )}
@@ -267,6 +279,37 @@ export default function CellRoomPage() {
         })}
         <div ref={bottomRef} />
       </div>
+
+      {/* 프로필 카드 — 아바타 클릭 시 */}
+      {profileCard && (
+        <div className="mx-4 mb-0 px-4 py-3 bg-white border border-indigo-200 rounded-2xl shadow-md flex items-center gap-3 flex-shrink-0">
+          <div className="w-12 h-12 rounded-full bg-indigo-50 border-2 border-indigo-200 overflow-hidden flex-shrink-0">
+            <AvatarPreview
+              skinTone={profileCard.skinTone}
+              gender={profileCard.gender}
+              hairStyle={profileCard.hairStyle}
+              outfit={profileCard.outfit}
+              size={48}
+              faceOnly
+            />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-bold text-gray-800 text-sm whitespace-nowrap">{profileCard.name}</p>
+            {profileCard.titles.length > 0 ? (
+              <div className="flex flex-wrap gap-1 mt-1">
+                {profileCard.titles.map(t => (
+                  <span key={t} className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 font-medium whitespace-nowrap">
+                    {t}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-gray-400 mt-0.5">직분 미설정</p>
+            )}
+          </div>
+          <button onClick={() => setProfileCard(null)} className="flex-shrink-0 text-gray-400 p-1" aria-label="닫기">✕</button>
+        </div>
+      )}
 
       {/* 입력창 */}
       <div className="flex items-center gap-2 px-4 py-3 bg-white border-t border-gray-200 flex-shrink-0 pb-safe">

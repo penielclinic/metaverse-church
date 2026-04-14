@@ -23,28 +23,38 @@ const OUTFIT_OPTIONS: { value: Outfit; label: string; emoji: string }[] = [
   { value: 'pastor',       label: '목사 가운', emoji: '✝️' },
 ]
 
+const TITLE_OPTIONS = [
+  '담임목사', '부목사', '전도사', '학교선생', '장로', '권사',
+  '안수집사', '집사', '성도', '선교회장', '순장', '목자', '구역장',
+  '초등학생', '중학생', '고등학생', '대학생', '대학원생', '청년',
+]
+
 export default function AvatarPage() {
   const router = useRouter()
   const { setAvatar } = useAvatarStore()
 
-  const [isNew,    setIsNew]    = useState(false)
-  const [gender,   setGender]   = useState<Gender>('male')
-  const [skinTone, setSkinTone] = useState<SkinTone>('medium')
-  const [hairStyle, setHairStyle] = useState('short')
-  const [outfit,   setOutfit]   = useState<Outfit>('casual')
-  const [saving,   setSaving]   = useState(false)
-  const [error,    setError]    = useState<string | null>(null)
+  const [isNew,      setIsNew]      = useState(false)
+  const [nameInput,  setNameInput]  = useState('')
+  const [titles,     setTitles]     = useState<string[]>([])
+  const [gender,     setGender]     = useState<Gender>('male')
+  const [skinTone,   setSkinTone]   = useState<SkinTone>('medium')
+  const [hairStyle,  setHairStyle]  = useState('short')
+  const [outfit,     setOutfit]     = useState<Outfit>('casual')
+  const [saving,     setSaving]     = useState(false)
+  const [error,      setError]      = useState<string | null>(null)
 
   useEffect(() => {
     setIsNew(new URLSearchParams(window.location.search).get('new') === 'true')
   }, [])
 
-  // DB에서 기존 아바타 불러오기
   useEffect(() => {
     if (isNew) return
     fetch('/api/avatar').then(r => r.ok ? r.json() : null).then(data => {
-      if (!data?.avatar) return
+      if (!data) return
+      if (data.name)   setNameInput(data.name)
+      if (Array.isArray(data.titles)) setTitles(data.titles)
       const a = data.avatar
+      if (!a) return
       if (a.skin_tone)  setSkinTone(a.skin_tone)
       if (a.gender)     setGender(a.gender)
       if (a.hair_style) setHairStyle(a.hair_style)
@@ -52,29 +62,36 @@ export default function AvatarPage() {
     })
   }, [isNew])
 
-  // 성별 바꾸면 헤어를 해당 성별 첫번째로 리셋
   function handleGenderChange(g: Gender) {
     setGender(g)
     setHairStyle(g === 'male' ? MALE_HAIR_OPTIONS[0].value : FEMALE_HAIR_OPTIONS[0].value)
   }
 
+  function toggleTitle(t: string) {
+    setTitles(prev => prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t])
+  }
+
   const hairOptions = gender === 'male' ? MALE_HAIR_OPTIONS : FEMALE_HAIR_OPTIONS
 
   async function handleSave() {
+    if (!nameInput.trim()) { setError('이름을 입력해주세요.'); return }
     setSaving(true)
     setError(null)
     try {
       const res = await fetch('/api/avatar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ skin_tone: skinTone, gender, hair_style: hairStyle, outfit }),
+        body: JSON.stringify({
+          skin_tone: skinTone, gender, hair_style: hairStyle, outfit,
+          name: nameInput.trim(), titles,
+        }),
       })
       if (!res.ok) {
         const d = await res.json()
         setError(d.error ?? '저장 실패')
         return
       }
-      setAvatar({ skinTone, gender, hairStyle, outfit })
+      setAvatar({ name: nameInput.trim(), titles, skinTone, gender, hairStyle, outfit })
       router.push('/world')
     } catch {
       setError('네트워크 오류가 발생했습니다.')
@@ -106,6 +123,50 @@ export default function AvatarPage() {
         </div>
 
         <div className="space-y-6">
+
+          {/* 이름 */}
+          <section>
+            <h2 className="text-sm font-semibold text-gray-600 mb-2">이름</h2>
+            <input
+              type="text"
+              value={nameInput}
+              onChange={e => setNameInput(e.target.value)}
+              placeholder="이름을 입력하세요"
+              maxLength={20}
+              className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-400 bg-white"
+            />
+          </section>
+
+          {/* 직분 */}
+          <section>
+            <h2 className="text-sm font-semibold text-gray-600 mb-1">직분</h2>
+            <p className="text-xs text-gray-400 mb-2">여러 개 선택 가능합니다</p>
+            <div className="flex flex-wrap gap-2">
+              {TITLE_OPTIONS.map(t => (
+                <button
+                  key={t}
+                  onClick={() => toggleTitle(t)}
+                  className={[
+                    'px-3 py-1.5 rounded-full border-2 text-xs font-medium transition-all',
+                    titles.includes(t)
+                      ? 'border-indigo-500 bg-indigo-50 text-indigo-700 shadow-sm'
+                      : 'border-gray-200 bg-white text-gray-600',
+                  ].join(' ')}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+            {titles.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1">
+                {titles.map(t => (
+                  <span key={t} className="text-[11px] px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 font-medium">
+                    {t}
+                  </span>
+                ))}
+              </div>
+            )}
+          </section>
 
           {/* 성별 */}
           <section>

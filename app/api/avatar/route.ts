@@ -20,7 +20,18 @@ export async function GET() {
       return NextResponse.json({ error: '아바타 조회 실패' }, { status: 500 })
     }
 
-    return NextResponse.json({ avatar: avatar ?? null })
+    // 프로필(이름, 직분)도 함께 반환
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('name, titles')
+      .eq('id', user.id)
+      .single()
+
+    return NextResponse.json({
+      avatar: avatar ?? null,
+      name: profile?.name ?? null,
+      titles: (profile as any)?.titles ?? [],
+    })
   } catch (err) {
     console.error('[avatar GET]', err)
     return NextResponse.json({ error: '서버 오류' }, { status: 500 })
@@ -37,7 +48,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json()
-    const { skin_tone, gender, hair_style, outfit } = body
+    const { skin_tone, gender, hair_style, outfit, name, titles } = body
 
     const validSkinTones  = ['light', 'medium', 'tan', 'dark']
     const validGenders    = ['male', 'female']
@@ -50,7 +61,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: '유효하지 않은 값입니다.' }, { status: 400 })
     }
 
-    // 기존 아바타 확인
+    // 이름 + 직분 업데이트
+    if (name && typeof name === 'string' && name.trim().length > 0) {
+      const titlesArr = Array.isArray(titles) ? titles.filter((t: unknown) => typeof t === 'string') : []
+      await supabase
+        .from('profiles')
+        .update({ name: name.trim(), titles: titlesArr } as any)
+        .eq('id', user.id)
+    }
+
+    // 아바타 외형 저장
     const { data: existing } = await supabase
       .from('avatars')
       .select('id')
@@ -60,13 +80,13 @@ export async function POST(req: Request) {
     if (existing) {
       const { error } = await supabase
         .from('avatars')
-        .update({ skin_tone, gender, hair_style, outfit, updated_at: new Date().toISOString() })
+        .update({ skin_tone, gender, hair_style, outfit, updated_at: new Date().toISOString() } as any)
         .eq('user_id', user.id)
       if (error) return NextResponse.json({ error: '업데이트 실패' }, { status: 500 })
     } else {
       const { error } = await supabase
         .from('avatars')
-        .insert({ user_id: user.id, skin_tone, gender, hair_style, outfit })
+        .insert({ user_id: user.id, skin_tone, gender, hair_style, outfit } as any)
       if (error) return NextResponse.json({ error: '생성 실패' }, { status: 500 })
     }
 

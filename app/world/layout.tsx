@@ -20,9 +20,16 @@ export default function WorldLayout({
     fetch('/api/avatar')
       .then((res) => res.ok ? res.json() : null)
       .then((data) => {
-        if (data?.avatar) {
-          const { skin_tone, gender, hair_style, outfit } = data.avatar
-          setAvatar({ skinTone: skin_tone, gender: gender ?? 'male', hairStyle: hair_style, outfit })
+        if (data) {
+          const a = data.avatar ?? {}
+          setAvatar({
+            name:      data.name      ?? undefined,
+            titles:    data.titles    ?? [],
+            skinTone:  a.skin_tone    ?? undefined,
+            gender:    a.gender       ?? 'male',
+            hairStyle: a.hair_style   ?? undefined,
+            outfit:    a.outfit       ?? undefined,
+          })
         }
       })
       .catch(() => {/* 비로그인 상태 등 무시 */})

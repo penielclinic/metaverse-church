@@ -6,6 +6,7 @@ export type Gender = 'male' | 'female'
 interface AvatarState {
   id: string | null
   name: string
+  titles: string[]
   level: number
   exp: number
   expToNext: number
@@ -25,6 +26,7 @@ interface AvatarState {
 export const useAvatarStore = create<AvatarState>((set) => ({
   id: null,
   name: '성도',
+  titles: [],
   level: 1,
   exp: 0,
   expToNext: 100,
