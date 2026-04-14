@@ -27,10 +27,11 @@ export async function GET() {
       .eq('id', user.id)
       .single()
 
+    const profileData = profile as { name?: string; titles?: string[] } | null
     return NextResponse.json({
       avatar: avatar ?? null,
-      name: profile?.name ?? null,
-      titles: (profile as any)?.titles ?? [],
+      name: profileData?.name ?? null,
+      titles: profileData?.titles ?? [],
     })
   } catch (err) {
     console.error('[avatar GET]', err)
@@ -61,13 +62,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: '유효하지 않은 값입니다.' }, { status: 400 })
     }
 
-    // 이름 + 직분 업데이트
+    // 이름 + 직분 업데이트 (titles 컬럼은 마이그레이션으로 추가됨 — 타입 무시)
     if (name && typeof name === 'string' && name.trim().length > 0) {
-      const titlesArr = Array.isArray(titles) ? titles.filter((t: unknown) => typeof t === 'string') : []
-      await supabase
-        .from('profiles')
-        .update({ name: name.trim(), titles: titlesArr } as any)
-        .eq('id', user.id)
+      const titlesArr: string[] = Array.isArray(titles)
+        ? (titles as unknown[]).filter((t): t is string => typeof t === 'string')
+        : []
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase.from('profiles') as any).update({ name: name.trim(), titles: titlesArr }).eq('id', user.id)
     }
 
     // 아바타 외형 저장
@@ -80,12 +81,14 @@ export async function POST(req: Request) {
     if (existing) {
       const { error } = await supabase
         .from('avatars')
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .update({ skin_tone, gender, hair_style, outfit, updated_at: new Date().toISOString() } as any)
         .eq('user_id', user.id)
       if (error) return NextResponse.json({ error: '업데이트 실패' }, { status: 500 })
     } else {
       const { error } = await supabase
         .from('avatars')
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .insert({ user_id: user.id, skin_tone, gender, hair_style, outfit } as any)
       if (error) return NextResponse.json({ error: '생성 실패' }, { status: 500 })
     }
