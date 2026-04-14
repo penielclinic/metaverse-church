@@ -24,7 +24,13 @@ export default function CellPage() {
 
   const [cells, setCells] = useState<Cell[]>([])
   const [myProfile, setMyProfile] = useState<{ cell_id: number | null; role: string; mission_id: number | null } | null>(null)
+  const [myUserId, setMyUserId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  // 신청 모달
+  const [applyTarget, setApplyTarget] = useState<Cell | null>(null)
+  const [applyMsg, setApplyMsg] = useState('')
+  const [applying, setApplying] = useState(false)
+  const [applyDone, setApplyDone] = useState<number | null>(null) // 신청 완료된 cell_id
 
   useEffect(() => {
     async function load() {
@@ -33,12 +39,19 @@ export default function CellPage() {
       // 현재 사용자 프로필
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
+        setMyUserId(user.id)
         const { data: profile } = await supabase
           .from('profiles')
           .select('cell_id, role, mission_id')
           .eq('id', user.id)
           .single()
         setMyProfile(profile ?? null)
+
+        // 내가 이미 신청한 셀 목록
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: existing } = await (supabase.from('cell_join_requests') as any)
+          .select('cell_id').eq('user_id', user.id).eq('status', 'pending')
+        if (existing) setApplyDone((existing[0] as { cell_id: number } | undefined)?.cell_id ?? null)
       }
 
       // 셀 목록 + 순장 이름 + 선교회명 + 인원 수
@@ -85,6 +98,21 @@ export default function CellPage() {
   const handleEnter = (cell: Cell) => {
     setCurrentSpace(`cell-${cell.id}`, `${cell.name} 모임방`)
     router.push(`/world/cell/${cell.id}`)
+  }
+
+  const handleApply = async () => {
+    if (!applyTarget || !myUserId) return
+    setApplying(true)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase.from('cell_join_requests') as any).insert({
+      user_id: myUserId,
+      cell_id: applyTarget.id,
+      message: applyMsg.trim() || null,
+    })
+    setApplyDone(applyTarget.id)
+    setApplying(false)
+    setApplyTarget(null)
+    setApplyMsg('')
   }
 
   return (
@@ -192,21 +220,31 @@ export default function CellPage() {
                             </div>
                           </div>
 
-                          {/* 입장 버튼 */}
-                          <button
-                            onClick={() => enter && handleEnter(cell)}
-                            disabled={!enter}
-                            className={[
-                              'flex-shrink-0 px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all min-h-[40px]',
-                              enter
-                                ? isOpen
+                          {/* 입장 / 신청 버튼 */}
+                          {enter ? (
+                            <button
+                              onClick={() => handleEnter(cell)}
+                              className={[
+                                'flex-shrink-0 px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all min-h-[40px]',
+                                isOpen
                                   ? 'bg-purple-600 text-white hover:bg-purple-700 active:scale-95'
-                                  : 'bg-indigo-600 text-white hover:bg-indigo-700 active:scale-95'
-                                : 'bg-gray-100 text-gray-400 cursor-not-allowed',
-                            ].join(' ')}
-                          >
-                            {enter ? '입장 →' : '비공개'}
-                          </button>
+                                  : 'bg-indigo-600 text-white hover:bg-indigo-700 active:scale-95',
+                              ].join(' ')}
+                            >
+                              입장 →
+                            </button>
+                          ) : applyDone === cell.id ? (
+                            <span className="flex-shrink-0 px-3 py-2 rounded-full text-xs font-semibold bg-green-100 text-green-700 whitespace-nowrap">
+                              신청됨 ✓
+                            </span>
+                          ) : (
+                            <button
+                              onClick={() => setApplyTarget(cell)}
+                              className="flex-shrink-0 px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap bg-white border border-indigo-300 text-indigo-600 hover:bg-indigo-50 active:scale-95 transition-all min-h-[40px]"
+                            >
+                              신청
+                            </button>
+                          )}
                         </div>
                       )
                     })}
@@ -228,6 +266,38 @@ export default function CellPage() {
 
         <div className="h-6" />
       </div>
+
+      {/* 순 신청 모달 */}
+      {applyTarget && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 px-4 pb-4 sm:pb-0">
+          <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-5">
+            <h2 className="text-base font-bold text-gray-800 mb-1">순 배치 신청</h2>
+            <p className="text-sm text-indigo-600 font-semibold mb-4 whitespace-nowrap">{applyTarget.name}</p>
+
+            <label className="block text-xs font-semibold text-gray-600 mb-1">간단한 메시지 (선택)</label>
+            <textarea
+              value={applyMsg}
+              onChange={(e) => setApplyMsg(e.target.value)}
+              placeholder="ex) 청년부 1구역에서 왔어요"
+              rows={3}
+              maxLength={200}
+              className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-300 mb-1"
+            />
+            <div className="text-right text-xs text-gray-400 mb-4">{applyMsg.length}/200</div>
+
+            <div className="flex gap-2">
+              <button onClick={() => { setApplyTarget(null); setApplyMsg('') }}
+                className="flex-1 py-3 rounded-xl border border-gray-300 text-sm text-gray-600 min-h-[44px]">
+                취소
+              </button>
+              <button onClick={handleApply} disabled={applying}
+                className="flex-1 py-3 rounded-xl bg-indigo-600 text-white text-sm font-semibold disabled:opacity-50 min-h-[44px]">
+                {applying ? '신청 중...' : '신청하기'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
