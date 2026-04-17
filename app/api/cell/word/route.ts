@@ -18,12 +18,10 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
     }
 
-    const { data, error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (supabase as any)
       .from('cell_word_boards')
-      .select(`
-        id, cell_id, bible_ref, bible_text, questions, updated_at,
-        profiles:updated_by ( name )
-      `)
+      .select('id, cell_id, bible_ref, bible_text, questions, updated_at, profiles:updated_by ( name )')
       .eq('cell_id', cellId)
       .maybeSingle()
 
@@ -82,7 +80,8 @@ export async function POST(req: Request) {
     }
 
     // upsert (cell_id unique 제약 활용)
-    const { data, error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (supabase as any)
       .from('cell_word_boards')
       .upsert(
         {

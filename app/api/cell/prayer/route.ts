@@ -18,55 +18,39 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
     }
 
-    const { data, error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: data2, error: error2 } = await (supabase as any)
       .from('cell_prayer_requests')
-      .select(`
-        id, cell_id, user_id, content, color, amen_count, is_answered, created_at,
-        profiles:user_id ( name ),
-        cell_prayer_amens!inner ( user_id )
-      `)
+      .select('id, cell_id, user_id, content, color, amen_count, is_answered, created_at, profiles:user_id ( name )')
       .eq('cell_id', cellId)
       .order('created_at', { ascending: false })
 
-    if (error) {
-      // inner join이 없는 경우도 처리 (아멘 없는 카드)
-      const { data: data2, error: error2 } = await supabase
-        .from('cell_prayer_requests')
-        .select(`
-          id, cell_id, user_id, content, color, amen_count, is_answered, created_at,
-          profiles:user_id ( name )
-        `)
-        .eq('cell_id', cellId)
-        .order('created_at', { ascending: false })
-
-      if (error2) {
-        console.error('[cell/prayer GET]', error2)
-        return NextResponse.json({ error: '조회 실패' }, { status: 500 })
-      }
-
-      // 내가 아멘한 목록 별도 조회
-      const ids = (data2 ?? []).map((r) => r.id)
-      const { data: myAmens } = ids.length
-        ? await supabase
-            .from('cell_prayer_amens')
-            .select('request_id')
-            .eq('user_id', user.id)
-            .in('request_id', ids)
-        : { data: [] }
-
-      const amenedSet = new Set((myAmens ?? []).map((a) => a.request_id))
-
-      const result = (data2 ?? []).map((r) => ({
-        ...r,
-        isAmenedByMe: amenedSet.has(r.id),
-        authorName: (r.profiles as { name: string } | null)?.name ?? '순원',
-        isMyOwn: r.user_id === user.id,
-      }))
-
-      return NextResponse.json({ data: result })
+    if (error2) {
+      console.error('[cell/prayer GET]', error2)
+      return NextResponse.json({ error: '조회 실패' }, { status: 500 })
     }
 
-    return NextResponse.json({ data })
+    // 내가 아멘한 목록 별도 조회
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const ids = (data2 ?? []).map((r: any) => r.id)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const supa = supabase as any
+    const { data: myAmens } = ids.length
+      ? await supa.from('cell_prayer_amens').select('request_id').eq('user_id', user.id).in('request_id', ids)
+      : { data: [] }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const amenedSet = new Set((myAmens ?? []).map((a: any) => a.request_id))
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const result = (data2 ?? []).map((r: any) => ({
+      ...r,
+      isAmenedByMe: amenedSet.has(r.id),
+      authorName: (r.profiles as { name: string } | null)?.name ?? '순원',
+      isMyOwn: r.user_id === user.id,
+    }))
+
+    return NextResponse.json({ data: result })
   } catch (err) {
     console.error('[cell/prayer GET] unexpected:', err)
     return NextResponse.json({ error: '서버 오류' }, { status: 500 })
@@ -99,7 +83,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: '올바른 색상을 선택해주세요.' }, { status: 400 })
     }
 
-    const { data, error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (supabase as any)
       .from('cell_prayer_requests')
       .insert({ cell_id: cellId, user_id: user.id, content, color })
       .select()
@@ -137,7 +122,8 @@ export async function PATCH(req: Request) {
 
     if (action === 'amen') {
       // 아멘 토글
-      const { data: existing } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: existing } = await (supabase as any)
         .from('cell_prayer_amens')
         .select('id')
         .eq('request_id', requestId)
@@ -146,24 +132,27 @@ export async function PATCH(req: Request) {
 
       if (existing) {
         // 아멘 취소
-        await supabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (supabase as any)
           .from('cell_prayer_amens')
           .delete()
           .eq('id', existing.id)
 
-        await supabase.rpc('decrement_prayer_amen', { p_request_id: requestId })
+        await supabase.rpc('decrement_prayer_amen' as never, { p_request_id: requestId } as never)
 
         return NextResponse.json({ success: true, amened: false })
       } else {
         // 아멘 추가
-        await supabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (supabase as any)
           .from('cell_prayer_amens')
           .insert({ request_id: requestId, user_id: user.id })
 
-        await supabase.rpc('increment_prayer_amen', { p_request_id: requestId })
+        await supabase.rpc('increment_prayer_amen' as never, { p_request_id: requestId } as never)
 
         // 기도제목 작성자 정보 조회 (알림톡 발송용)
-        const { data: prayerReq } = await supabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: prayerReq } = await (supabase as any)
           .from('cell_prayer_requests')
           .select('user_id, content, amen_count, profiles:user_id ( name )')
           .eq('id', requestId)
@@ -181,7 +170,8 @@ export async function PATCH(req: Request) {
 
     if (action === 'answered') {
       // 완료 토글 (본인만)
-      const { data: prayerReq } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: prayerReq } = await (supabase as any)
         .from('cell_prayer_requests')
         .select('user_id, is_answered')
         .eq('id', requestId)
@@ -191,7 +181,8 @@ export async function PATCH(req: Request) {
         return NextResponse.json({ error: '본인 기도제목만 수정할 수 있습니다.' }, { status: 403 })
       }
 
-      const { error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any)
         .from('cell_prayer_requests')
         .update({ is_answered: !prayerReq.is_answered })
         .eq('id', requestId)
@@ -228,7 +219,8 @@ export async function DELETE(req: Request) {
     }
 
     // 본인 확인
-    const { data: prayerReq } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: prayerReq } = await (supabase as any)
       .from('cell_prayer_requests')
       .select('user_id, cell_id')
       .eq('id', id)
@@ -255,7 +247,8 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ error: '삭제 권한이 없습니다.' }, { status: 403 })
     }
 
-    const { error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any)
       .from('cell_prayer_requests')
       .delete()
       .eq('id', id)

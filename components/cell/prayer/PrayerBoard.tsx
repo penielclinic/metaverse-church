@@ -16,6 +16,7 @@ interface PrayerBoardProps {
   myUserId: string
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export default function PrayerBoard({ cellId, myUserId }: PrayerBoardProps) {
   const [cards, setCards] = useState<PrayerCardData[]>([])
   const [loading, setLoading] = useState(true)

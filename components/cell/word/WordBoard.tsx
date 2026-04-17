@@ -133,7 +133,7 @@ export default function WordBoard({ cellId, isLeader }: WordBoardProps) {
                   className="text-sm text-amber-900 leading-relaxed italic"
                   style={{ wordBreak: 'keep-all' }}
                 >
-                  "{board.bible_text}"
+                  &ldquo;{board.bible_text}&rdquo;
                 </p>
               )}
             </div>
