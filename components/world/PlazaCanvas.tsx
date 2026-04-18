@@ -186,10 +186,10 @@ export default function PlazaCanvas({ userId, name, skinTone, gender, hairStyle,
         <circle cx="400" cy="44" r="14" fill="#b8a485" stroke="#a08060" strokeWidth="2" />
         <circle cx="400" cy="44" r="10" fill="#c8b89a" />
 
-        {/* ── 십자가 (중앙 본관 지붕 꼭대기) ── */}
-        <rect x="396" y="-24" width="8" height="30" rx="2" fill="#f0e0c0" stroke="#c8a060" strokeWidth="1.2" />
-        <rect x="386" y="-14" width="28" height="8"  rx="2" fill="#f0e0c0" stroke="#c8a060" strokeWidth="1.2" />
-        <circle cx="400" cy="-8" r="14" fill="rgba(255,230,130,0.15)" />
+        {/* ── 십자가 (중앙 본관 지붕 위, 잘 보이도록 내림) ── */}
+        <circle cx="400" cy="14" r="18" fill="rgba(255,230,130,0.18)" />
+        <rect x="396" y="-2"  width="9" height="34" rx="2" fill="#f5e8c8" stroke="#c8902a" strokeWidth="1.5" />
+        <rect x="384" y="10"  width="33" height="9" rx="2" fill="#f5e8c8" stroke="#c8902a" strokeWidth="1.5" />
 
         {/* ── 교회 이름 현판 ── */}
         <rect x="310" y="155" width="180" height="22" rx="4" fill="#a08050" opacity="0.85" />
