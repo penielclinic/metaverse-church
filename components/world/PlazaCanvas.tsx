@@ -185,6 +185,16 @@ export default function PlazaCanvas({ userId, name, skinTone, gender, hairStyle,
         ))}
         <circle cx="400" cy="44" r="14" fill="#b8a485" stroke="#a08060" strokeWidth="2" />
         <circle cx="400" cy="44" r="10" fill="#c8b89a" />
+
+        {/* ── 십자가 (중앙 본관 지붕 꼭대기) ── */}
+        <rect x="396" y="-24" width="8" height="30" rx="2" fill="#f0e0c0" stroke="#c8a060" strokeWidth="1.2" />
+        <rect x="386" y="-14" width="28" height="8"  rx="2" fill="#f0e0c0" stroke="#c8a060" strokeWidth="1.2" />
+        <circle cx="400" cy="-8" r="14" fill="rgba(255,230,130,0.15)" />
+
+        {/* ── 교회 이름 현판 ── */}
+        <rect x="310" y="155" width="180" height="22" rx="4" fill="#a08050" opacity="0.85" />
+        <text x="400" y="170" textAnchor="middle" fontSize="11" fontWeight="bold" fill="#fff8e8" fontFamily="serif" letterSpacing="1">해운대순복음교회</text>
+
         <rect x="580" y="60" width="220" height="120" fill="#c8b89a" />
         <rect x="590" y="50" width="200" height="15" fill="#b8a485" />
         {[600,635,670,705,740].map(x => (
@@ -278,7 +288,7 @@ export default function PlazaCanvas({ userId, name, skinTone, gender, hairStyle,
         {/* ── 안내 텍스트 ── */}
         <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 whitespace-nowrap"
           style={{ pointerEvents: 'none', fontSize: 11, color: 'rgba(100,80,50,0.7)', fontWeight: 600, letterSpacing: 1 }}>
-          Musée du Louvre · 바닥 클릭: 이동 · 벤치 클릭: 앉기
+          해운대순복음교회 · 바닥 클릭: 이동 · 벤치 클릭: 앉기
         </div>
       </div>
 

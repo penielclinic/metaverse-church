@@ -44,10 +44,10 @@ export default function PlazaPage() {
       {/* 헤더 */}
       <div>
         <h1 className="text-xl font-bold text-gray-800" style={{ wordBreak: 'keep-all' }}>
-          🏛️ 교제광장 — 루브르 광장
+          ✝️ 교제광장 — 해운대순복음교회
         </h1>
         <p className="text-sm text-gray-500 mt-0.5" style={{ wordBreak: 'keep-all' }}>
-          파리 루브르 박물관 광장에서 성도들과 함께해요. 바닥을 클릭하면 이동해요!
+          성도들과 함께 교제해요. 바닥 클릭: 이동 · 벤치 클릭: 앉기
         </p>
       </div>
 
