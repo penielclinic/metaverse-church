@@ -12,6 +12,8 @@ export interface PresenceUser {
   gender: string
   hairStyle: string
   outfit: string
+  benchId: string | null    // 앉은 벤치 id (null = 서 있음)
+  seatIndex: number | null  // 벤치 내 좌석 번호 (0~2)
 }
 
 type PresenceState = Record<string, PresenceUser[]>
@@ -29,9 +31,14 @@ export function usePlazaPresence({
   const meRef = useRef(me)
   meRef.current = me
 
-  const trackPosition = useCallback(async (x: number, y: number) => {
+  const trackPosition = useCallback(async (
+    x: number,
+    y: number,
+    benchId: string | null = null,
+    seatIndex: number | null = null,
+  ) => {
     if (!channelRef.current) return
-    await channelRef.current.track({ ...meRef.current, x, y })
+    await channelRef.current.track({ ...meRef.current, x, y, benchId, seatIndex })
   }, [])
 
   useEffect(() => {
