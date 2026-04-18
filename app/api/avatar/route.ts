@@ -29,6 +29,7 @@ export async function GET() {
 
     const profileData = profile as { name?: string; titles?: string[] } | null
     return NextResponse.json({
+      userId: user.id,
       avatar: avatar ?? null,
       name: profileData?.name ?? null,
       titles: profileData?.titles ?? [],

@@ -16,6 +16,13 @@ export const SPACES: SpaceConfig[] = [
     path: '/world/sanctuary',
   },
   {
+    slug: 'plaza',
+    name: '교제광장',
+    emoji: '🌳',
+    description: '성도들이 모이는 만남의 광장',
+    path: '/world/plaza',
+  },
+  {
     slug: 'prayer',
     name: '기도실',
     emoji: '🙏',
