@@ -11,6 +11,7 @@ interface PrayerNote {
   amenCount: number
   color: 'yellow' | 'pink' | 'blue' | 'green'
   myAmen: boolean
+  userId: string
 }
 
 const COLOR_CLASSES: Record<PrayerNote['color'], string> = {
@@ -24,6 +25,7 @@ const NOTE_COLORS: PrayerNote['color'][] = ['yellow', 'pink', 'blue', 'green']
 
 type DbNote = {
   id: number
+  user_id: string
   content: string
   is_anonymous: boolean
   amen_count: number
@@ -40,12 +42,14 @@ export default function PrayerPage() {
   const [isAnonymous, setIsAnonymous] = useState(false)
   const [selectedColor, setSelectedColor] = useState<PrayerNote['color']>('yellow')
   const [loading, setLoading] = useState(true)
+  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null)
 
   const supabase = createClient()
 
   const toNote = useCallback(
     (d: DbNote): PrayerNote => ({
       id: d.id,
+      userId: d.user_id,
       content: d.content,
       author: d.is_anonymous ? '익명' : (d.profiles?.name ?? '성도'),
       isAnonymous: d.is_anonymous,
@@ -114,7 +118,6 @@ export default function PrayerPage() {
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'prayer_notes' },
         (payload) => {
-          // amen_count 등 업데이트
           setNotes((prev) =>
             prev.map((n) =>
               n.id === payload.new.id
@@ -122,6 +125,13 @@ export default function PrayerPage() {
                 : n
             )
           )
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'prayer_notes' },
+        (payload) => {
+          setNotes((prev) => prev.filter((n) => n.id !== (payload.old as { id: number }).id))
         }
       )
       .subscribe()
@@ -154,6 +164,13 @@ export default function PrayerPage() {
     } else {
       await supabase.from('prayer_amens').insert({ note_id: id, user_id: myUserId })
     }
+  }
+
+  const handleDelete = async (id: number) => {
+    if (deleteConfirmId !== id) { setDeleteConfirmId(id); return }
+    await supabase.from('prayer_notes').delete().eq('id', id)
+    setNotes((prev) => prev.filter((n) => n.id !== id))
+    setDeleteConfirmId(null)
   }
 
   const handleSubmit = async () => {
@@ -210,22 +227,52 @@ export default function PrayerPage() {
                 {note.content}
               </p>
 
-              <div className="flex items-center justify-between mt-3 pt-2 border-t border-black/10">
-                <span className="text-xs text-gray-500 whitespace-nowrap">{note.author}</span>
-                {/* 터치 영역 최소 48px 보장 */}
-                <button
-                  onClick={() => handleAmen(note.id)}
-                  className={[
-                    'flex items-center gap-1 px-3 rounded-full text-xs font-semibold transition-all',
-                    'min-h-[48px] min-w-[48px] justify-center',
-                    note.myAmen
-                      ? 'bg-indigo-500 text-white'
-                      : 'bg-white/70 text-gray-600 hover:bg-indigo-100',
-                  ].join(' ')}
-                  aria-label={`아멘 ${note.amenCount}개`}
-                >
-                  🙏 <span>{note.amenCount}</span>
-                </button>
+              <div className="flex items-center justify-between mt-3 pt-2 border-t border-black/10 gap-1">
+                <span className="text-xs text-gray-500 whitespace-nowrap truncate">{note.author}</span>
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  {/* 아멘 버튼 */}
+                  <button
+                    onClick={() => { setDeleteConfirmId(null); handleAmen(note.id) }}
+                    className={[
+                      'flex items-center gap-1 px-2.5 rounded-full text-xs font-semibold transition-all',
+                      'min-h-[44px] min-w-[44px] justify-center',
+                      note.myAmen
+                        ? 'bg-indigo-500 text-white'
+                        : 'bg-white/70 text-gray-600 hover:bg-indigo-100',
+                    ].join(' ')}
+                    aria-label={`아멘 ${note.amenCount}개`}
+                  >
+                    🙏 <span>{note.amenCount}</span>
+                  </button>
+
+                  {/* 삭제 버튼 — 내 글만 표시 */}
+                  {note.userId === myUserId && (
+                    deleteConfirmId === note.id ? (
+                      <div className="flex gap-1">
+                        <button
+                          onClick={() => setDeleteConfirmId(null)}
+                          className="px-2 py-1 rounded-lg text-[10px] font-semibold bg-gray-200 text-gray-600 min-h-[44px]"
+                        >
+                          취소
+                        </button>
+                        <button
+                          onClick={() => handleDelete(note.id)}
+                          className="px-2 py-1 rounded-lg text-[10px] font-semibold bg-red-500 text-white min-h-[44px]"
+                        >
+                          삭제
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => handleDelete(note.id)}
+                        className="flex items-center justify-center w-9 min-h-[44px] rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                        aria-label="삭제"
+                      >
+                        🗑
+                      </button>
+                    )
+                  )}
+                </div>
               </div>
             </div>
           ))}
