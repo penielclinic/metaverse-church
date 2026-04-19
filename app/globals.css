@@ -25,3 +25,8 @@ body {
     text-wrap: balance;
   }
 }
+
+@keyframes chatBubbleFade {
+  0%, 75% { opacity: 1; }
+  100%     { opacity: 0; }
+}

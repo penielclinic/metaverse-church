@@ -652,3 +652,270 @@ CREATE POLICY "devotion_amens_insert_own"
 CREATE POLICY "devotion_amens_delete_own"
   ON devotion_amens FOR DELETE TO authenticated
   USING (user_id = auth.uid());
+-- ============================================================
+-- 013_cell_album.sql
+-- 셀 앨범 테이블 + Storage 버킷 설정
+-- ============================================================
+
+-- ── cell_album 테이블 ─────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS cell_album (
+  id           BIGSERIAL   PRIMARY KEY,
+  cell_id      INTEGER     NOT NULL REFERENCES cells(id)    ON DELETE CASCADE,
+  user_id      UUID        NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  storage_path TEXT        NOT NULL,
+  public_url   TEXT        NOT NULL,
+  file_name    TEXT        NOT NULL,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_cell_album_cell_created
+  ON cell_album(cell_id, created_at DESC);
+
+-- ── RLS 활성화 ───────────────────────────────────────────────
+ALTER TABLE cell_album ENABLE ROW LEVEL SECURITY;
+
+-- 조회: 소속 셀원 + 교역자
+CREATE POLICY "cell_album_select"
+  ON cell_album FOR SELECT TO authenticated
+  USING (
+    cell_id = (SELECT cell_id FROM profiles WHERE id = auth.uid())
+    OR
+    (SELECT role FROM profiles WHERE id = auth.uid())
+      IN ('pastor', 'youth_pastor', 'mission_leader')
+  );
+
+-- 업로드: 소속 셀원 + 교역자
+CREATE POLICY "cell_album_insert"
+  ON cell_album FOR INSERT TO authenticated
+  WITH CHECK (
+    user_id = auth.uid()
+    AND (
+      cell_id = (SELECT cell_id FROM profiles WHERE id = auth.uid())
+      OR
+      (SELECT role FROM profiles WHERE id = auth.uid())
+        IN ('pastor', 'youth_pastor', 'mission_leader')
+    )
+  );
+
+-- 삭제: 업로드 본인 + cell_leader(자신의 셀) + 교역자
+CREATE POLICY "cell_album_delete"
+  ON cell_album FOR DELETE TO authenticated
+  USING (
+    user_id = auth.uid()
+    OR
+    (
+      (SELECT role FROM profiles WHERE id = auth.uid()) = 'cell_leader'
+      AND cell_id = (SELECT cell_id FROM profiles WHERE id = auth.uid())
+    )
+    OR
+    (SELECT role FROM profiles WHERE id = auth.uid())
+      IN ('pastor', 'youth_pastor', 'mission_leader')
+  );
+
+-- ── Storage 버킷 생성 ─────────────────────────────────────────
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES (
+  'cell-album',
+  'cell-album',
+  TRUE,
+  10485760,  -- 10MB
+  ARRAY['image/jpeg', 'image/png', 'image/webp']
+)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── Storage RLS 정책 ──────────────────────────────────────────
+
+-- 조회(다운로드): 인증된 사용자 전체 허용 (public 버킷이므로)
+CREATE POLICY "cell_album_storage_select"
+  ON storage.objects FOR SELECT TO authenticated
+  USING (bucket_id = 'cell-album');
+
+-- 업로드: 인증된 사용자 (API route에서 셀 멤버 검증)
+CREATE POLICY "cell_album_storage_insert"
+  ON storage.objects FOR INSERT TO authenticated
+  WITH CHECK (bucket_id = 'cell-album');
+
+-- 삭제: 인증된 사용자 (API route에서 권한 검증)
+CREATE POLICY "cell_album_storage_delete"
+  ON storage.objects FOR DELETE TO authenticated
+  USING (bucket_id = 'cell-album');
+
+-- ── Realtime Publication ──────────────────────────────────────
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime' AND tablename = 'cell_album'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE cell_album;
+  END IF;
+END $$;
+
+
+-- ============================================================
+-- 014_cell_features.sql
+-- 출석 체크 / MVP 투표 / 셀 쪽지 / 아바타 성별 등 누락 스키마 추가
+-- ============================================================
+
+-- ── profiles 누락 컬럼 ─────────────────────────────────────────
+ALTER TABLE profiles
+  ADD COLUMN IF NOT EXISTS titles           TEXT[]      NOT NULL DEFAULT '{}',
+  ADD COLUMN IF NOT EXISTS attendance_total INTEGER     NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS has_crown        BOOLEAN     NOT NULL DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS crown_until      TIMESTAMPTZ;
+
+-- ── avatars 성별 컬럼 ──────────────────────────────────────────
+ALTER TABLE avatars
+  ADD COLUMN IF NOT EXISTS gender TEXT NOT NULL DEFAULT 'male'
+    CHECK (gender IN ('male', 'female'));
+
+-- ── 출석 로그 ──────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS attendance_logs (
+  id         BIGSERIAL   PRIMARY KEY,
+  cell_id    INTEGER     NOT NULL REFERENCES cells(id)    ON DELETE CASCADE,
+  user_id    UUID        NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  date       DATE        NOT NULL DEFAULT CURRENT_DATE,
+  status     TEXT        NOT NULL CHECK (status IN ('present', 'absent', 'late')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (cell_id, user_id, date)
+);
+
+CREATE INDEX IF NOT EXISTS idx_attendance_logs_cell_date
+  ON attendance_logs(cell_id, date DESC);
+
+ALTER TABLE attendance_logs ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "attendance_logs_select_cell"
+  ON attendance_logs FOR SELECT TO authenticated
+  USING (
+    cell_id = (SELECT cell_id FROM profiles WHERE id = auth.uid())
+    OR (SELECT role FROM profiles WHERE id = auth.uid())
+      IN ('cell_leader', 'youth_pastor', 'pastor')
+  );
+
+CREATE POLICY "attendance_logs_insert_leader"
+  ON attendance_logs FOR INSERT TO authenticated
+  WITH CHECK (
+    (SELECT role FROM profiles WHERE id = auth.uid())
+      IN ('cell_leader', 'youth_pastor', 'pastor')
+  );
+
+CREATE POLICY "attendance_logs_update_leader"
+  ON attendance_logs FOR UPDATE TO authenticated
+  USING (
+    (SELECT role FROM profiles WHERE id = auth.uid())
+      IN ('cell_leader', 'youth_pastor', 'pastor')
+  );
+
+-- ── MVP 투표 세션 ──────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS mvp_sessions (
+  id          BIGSERIAL   PRIMARY KEY,
+  cell_id     INTEGER     NOT NULL REFERENCES cells(id)    ON DELETE CASCADE,
+  status      TEXT        NOT NULL DEFAULT 'active'
+                          CHECK (status IN ('active', 'closed')),
+  winner_ids  UUID[]      NOT NULL DEFAULT '{}',
+  created_by  UUID        NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  closed_at   TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS idx_mvp_sessions_cell
+  ON mvp_sessions(cell_id, created_at DESC);
+
+ALTER TABLE mvp_sessions ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "mvp_sessions_select_cell"
+  ON mvp_sessions FOR SELECT TO authenticated
+  USING (
+    cell_id = (SELECT cell_id FROM profiles WHERE id = auth.uid())
+    OR (SELECT role FROM profiles WHERE id = auth.uid())
+      IN ('cell_leader', 'youth_pastor', 'pastor')
+  );
+
+CREATE POLICY "mvp_sessions_insert_leader"
+  ON mvp_sessions FOR INSERT TO authenticated
+  WITH CHECK (
+    (SELECT role FROM profiles WHERE id = auth.uid())
+      IN ('cell_leader', 'youth_pastor', 'pastor')
+  );
+
+CREATE POLICY "mvp_sessions_update_leader"
+  ON mvp_sessions FOR UPDATE TO authenticated
+  USING (
+    (SELECT role FROM profiles WHERE id = auth.uid())
+      IN ('cell_leader', 'youth_pastor', 'pastor')
+  );
+
+-- ── MVP 투표 ───────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS mvp_votes (
+  id          BIGSERIAL   PRIMARY KEY,
+  session_id  BIGINT      NOT NULL REFERENCES mvp_sessions(id) ON DELETE CASCADE,
+  voter_id    UUID        NOT NULL REFERENCES profiles(id)     ON DELETE CASCADE,
+  target_id   UUID        NOT NULL REFERENCES profiles(id)     ON DELETE CASCADE,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (session_id, voter_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_mvp_votes_session
+  ON mvp_votes(session_id);
+
+ALTER TABLE mvp_votes ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "mvp_votes_select_cell"
+  ON mvp_votes FOR SELECT TO authenticated
+  USING (
+    session_id IN (
+      SELECT id FROM mvp_sessions
+      WHERE cell_id = (SELECT cell_id FROM profiles WHERE id = auth.uid())
+    )
+    OR (SELECT role FROM profiles WHERE id = auth.uid())
+      IN ('cell_leader', 'youth_pastor', 'pastor')
+  );
+
+CREATE POLICY "mvp_votes_insert_own"
+  ON mvp_votes FOR INSERT TO authenticated
+  WITH CHECK (voter_id = auth.uid());
+
+-- ── 셀 쪽지 보드 ───────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS cell_notes (
+  id          BIGSERIAL   PRIMARY KEY,
+  cell_id     INTEGER     NOT NULL REFERENCES cells(id)    ON DELETE CASCADE,
+  user_id     UUID        NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  author_name TEXT        NOT NULL,
+  content     TEXT        NOT NULL CHECK (char_length(content) BETWEEN 1 AND 100),
+  color       TEXT        NOT NULL DEFAULT 'yellow'
+                          CHECK (color IN ('yellow', 'pink', 'blue', 'green', 'purple')),
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_cell_notes_cell_created
+  ON cell_notes(cell_id, created_at DESC);
+
+ALTER TABLE cell_notes ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "cell_notes_select_cell"
+  ON cell_notes FOR SELECT TO authenticated
+  USING (
+    cell_id = (SELECT cell_id FROM profiles WHERE id = auth.uid())
+    OR (SELECT role FROM profiles WHERE id = auth.uid())
+      IN ('cell_leader', 'youth_pastor', 'pastor')
+  );
+
+CREATE POLICY "cell_notes_insert_cell"
+  ON cell_notes FOR INSERT TO authenticated
+  WITH CHECK (
+    user_id = auth.uid()
+    AND (
+      cell_id = (SELECT cell_id FROM profiles WHERE id = auth.uid())
+      OR (SELECT role FROM profiles WHERE id = auth.uid())
+        IN ('cell_leader', 'youth_pastor', 'pastor')
+    )
+  );
+
+CREATE POLICY "cell_notes_delete_own_or_leader"
+  ON cell_notes FOR DELETE TO authenticated
+  USING (
+    user_id = auth.uid()
+    OR (SELECT role FROM profiles WHERE id = auth.uid())
+      IN ('cell_leader', 'youth_pastor', 'pastor')
+  );

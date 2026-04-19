@@ -1,10 +1,14 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import HUD from '@/components/world/HUD'
 import SpaceSidebar from '@/components/world/SpaceSidebar'
 import { useAvatarStore } from '@/store/avatarStore'
+import { useWorldStore } from '@/store/worldStore'
+import { useWorldPresence } from '@/lib/supabase/presence'
+import { SPACES } from '@/lib/spaces'
+import { createClient } from '@/lib/supabase/client'
 
 export default function WorldLayout({
   children,
@@ -13,9 +17,12 @@ export default function WorldLayout({
 }) {
   const pathname = usePathname()
   const isAvatarPage = pathname === '/world/avatar'
-  const { setAvatar } = useAvatarStore()
 
-  // 앱 첫 로드 시 DB에 저장된 아바타 데이터를 Zustand에 반영
+  const { setAvatar, name, level } = useAvatarStore()
+  const { setCurrentSpace, setOnlineUsers, currentSpaceSlug } = useWorldStore()
+  const [userId, setUserId] = useState<string | null>(null)
+
+  // 아바타 데이터 로드 + userId 확보
   useEffect(() => {
     fetch('/api/avatar')
       .then((res) => res.ok ? res.json() : null)
@@ -33,7 +40,31 @@ export default function WorldLayout({
         }
       })
       .catch(() => {/* 비로그인 상태 등 무시 */})
+
+    const supabase = createClient()
+    supabase.auth.getUser()
+      .then(({ data: { user } }) => { if (user) setUserId(user.id) })
+      .catch(() => {})
   }, [setAvatar])
+
+  // pathname → 현재 공간 자동 동기화
+  useEffect(() => {
+    if (pathname === '/world') {
+      setCurrentSpace('world', '대시보드')
+      return
+    }
+    const matched = SPACES.find((s) => pathname.startsWith(s.path))
+    if (matched) setCurrentSpace(matched.slug, matched.name)
+  }, [pathname, setCurrentSpace])
+
+  // 전역 presence 추적 (공간별 접속자 수 실시간 집계)
+  useWorldPresence({
+    userId,
+    name,
+    spaceSlug: currentSpaceSlug,
+    avatarLevel: level,
+    onSync: setOnlineUsers,
+  })
 
   return (
     <div className="min-h-screen bg-gray-50">
