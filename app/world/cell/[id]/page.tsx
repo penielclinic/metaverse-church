@@ -38,30 +38,39 @@ const NOTE_COLORS = [
 const NOTE_ROTATIONS = ['-rotate-1', 'rotate-1', '-rotate-2', 'rotate-2', 'rotate-0']
 const getNoteStyle = (color: string) => NOTE_COLORS.find(c => c.value === color) ?? NOTE_COLORS[0]
 
-// ── 채팅 입력창 — 부모 리렌더와 독립된 자체 state 보유 ───────────
+// ── 채팅 입력창 ────────────────────────────────────────────────
+// - ref 기반 비제어 입력: 부모 리렌더가 입력값에 영향 없음
+// - userSelect: 'text' : 부모 select-none이 iOS 키보드 입력 차단하는 버그 방지
 function ChatInput({ onSend }: { onSend: (text: string) => void }) {
-  const [value, setValue] = useState('')
+  const inputRef  = useRef<HTMLInputElement>(null)
+  const [hasText, setHasText] = useState(false)
 
   const handleSend = () => {
-    const text = value.trim()
+    const text = inputRef.current?.value.trim() ?? ''
     if (!text) return
     onSend(text)
-    setValue('')
+    if (inputRef.current) { inputRef.current.value = ''; setHasText(false) }
   }
 
   return (
     <div className="flex items-center gap-2 px-4 py-3 flex-shrink-0"
       style={{ background: 'rgba(15,23,42,0.95)', borderTop: '1px solid rgba(251,191,36,0.12)' }}>
       <input
+        ref={inputRef}
         type="text"
-        value={value}
-        onChange={e => setValue(e.target.value)}
+        defaultValue=""
+        onChange={e => setHasText(e.target.value.trim().length > 0)}
         onKeyDown={e => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSend())}
         placeholder="메시지를 입력하세요..." maxLength={300}
         className="flex-1 rounded-full px-4 py-2.5 text-sm text-slate-100 focus:outline-none min-h-[44px] placeholder-slate-500"
-        style={{ background: 'rgba(30,27,75,0.8)', border: '1px solid rgba(251,191,36,0.2)' }}
+        style={{
+          background: 'rgba(30,27,75,0.8)',
+          border: '1px solid rgba(251,191,36,0.2)',
+          userSelect: 'text',
+          WebkitUserSelect: 'text',
+        }}
       />
-      <button onClick={handleSend} disabled={!value.trim()}
+      <button onClick={handleSend} disabled={!hasText}
         className="flex-shrink-0 w-11 h-11 rounded-full flex items-center justify-center active:scale-95 disabled:opacity-40"
         style={{ background: 'linear-gradient(135deg,#d97706,#b45309)' }}>
         <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-white rotate-90">
