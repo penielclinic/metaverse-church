@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import AvatarPreview from '@/components/world/AvatarPreview'
@@ -38,6 +38,40 @@ const NOTE_COLORS = [
 const NOTE_ROTATIONS = ['-rotate-1', 'rotate-1', '-rotate-2', 'rotate-2', 'rotate-0']
 const getNoteStyle = (color: string) => NOTE_COLORS.find(c => c.value === color) ?? NOTE_COLORS[0]
 
+// ── 채팅 입력창 — 부모 리렌더와 독립된 자체 state 보유 ───────────
+function ChatInput({ onSend }: { onSend: (text: string) => void }) {
+  const [value, setValue] = useState('')
+
+  const handleSend = () => {
+    const text = value.trim()
+    if (!text) return
+    onSend(text)
+    setValue('')
+  }
+
+  return (
+    <div className="flex items-center gap-2 px-4 py-3 flex-shrink-0"
+      style={{ background: 'rgba(15,23,42,0.95)', borderTop: '1px solid rgba(251,191,36,0.12)' }}>
+      <input
+        type="text"
+        value={value}
+        onChange={e => setValue(e.target.value)}
+        onKeyDown={e => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSend())}
+        placeholder="메시지를 입력하세요..." maxLength={300}
+        className="flex-1 rounded-full px-4 py-2.5 text-sm text-slate-100 focus:outline-none min-h-[44px] placeholder-slate-500"
+        style={{ background: 'rgba(30,27,75,0.8)', border: '1px solid rgba(251,191,36,0.2)' }}
+      />
+      <button onClick={handleSend} disabled={!value.trim()}
+        className="flex-shrink-0 w-11 h-11 rounded-full flex items-center justify-center active:scale-95 disabled:opacity-40"
+        style={{ background: 'linear-gradient(135deg,#d97706,#b45309)' }}>
+        <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-white rotate-90">
+          <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+        </svg>
+      </button>
+    </div>
+  )
+}
+
 // ── 보드 판 정의 ──────────────────────────────────────────────
 const BOARDS: { key: DrawerKey; icon: string; label: string; accent: string; glow: string }[] = [
   { key: 'word',       icon: '📖', label: '오늘의\n말씀',  accent: '#C9A227', glow: 'rgba(201,162,39,0.35)' },
@@ -59,7 +93,6 @@ export default function CellRoomPage() {
   const [cellName,    setCellName]    = useState('')
   const [messages,    setMessages]    = useState<Message[]>([])
   const [members,     setMembers]     = useState<Member[]>([])
-  const [input,       setInput]       = useState('')
   const [myUserId,    setMyUserId]    = useState<string | null>(null)
   const [myProfile,   setMyProfile]   = useState<Member | null>(null)
   const [isLeader,    setIsLeader]    = useState(false)
@@ -154,17 +187,17 @@ export default function CellRoomPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
-  const sendMessage = async () => {
-    if (!input.trim() || !myUserId || !myProfile || !channelRef.current) return
+  const sendMessage = useCallback(async (text: string) => {
+    if (!myUserId || !myProfile || !channelRef.current) return
     const msg: Message = {
-      id: `${Date.now()}-${myUserId}`, userId: myUserId, name: myProfile.name, text: input.trim(),
+      id: `${Date.now()}-${myUserId}`, userId: myUserId, name: myProfile.name, text,
       time: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
     }
     await channelRef.current.send({ type: 'broadcast', event: 'chat', payload: msg })
     setMessages(prev => [...prev, msg])
-    setInput('')
     setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50)
-  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [myUserId, myProfile])
 
   const postNote = async () => {
     if (!noteInput.trim() || !myUserId || !myProfile || !channelRef.current) return
@@ -260,21 +293,7 @@ export default function CellRoomPage() {
               })}
               <div ref={bottomRef} />
             </div>
-            <div className="flex items-center gap-2 px-4 py-3 flex-shrink-0"
-              style={{ background: 'rgba(15,23,42,0.95)', borderTop: '1px solid rgba(251,191,36,0.12)' }}>
-              <input type="text" value={input}
-                onChange={e => setInput(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), sendMessage())}
-                placeholder="메시지를 입력하세요..." maxLength={300}
-                className="flex-1 rounded-full px-4 py-2.5 text-sm text-slate-100 focus:outline-none min-h-[44px] placeholder-slate-500"
-                style={{ background: 'rgba(30,27,75,0.8)', border: '1px solid rgba(251,191,36,0.2)' }}
-              />
-              <button onClick={sendMessage} disabled={!input.trim()}
-                className="flex-shrink-0 w-11 h-11 rounded-full flex items-center justify-center active:scale-95 disabled:opacity-40"
-                style={{ background: 'linear-gradient(135deg,#d97706,#b45309)' }}>
-                <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-white rotate-90"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
-              </button>
-            </div>
+            <ChatInput onSend={sendMessage} />
           </div>
         )
 
