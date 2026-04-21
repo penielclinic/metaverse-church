@@ -617,7 +617,7 @@ export default function CellRoomPage() {
 
             {/* 드로어 컨텐츠 */}
             <div className="flex-1 overflow-hidden flex flex-col">
-              <DrawerContent />
+              {DrawerContent()}
             </div>
           </div>
         </>
