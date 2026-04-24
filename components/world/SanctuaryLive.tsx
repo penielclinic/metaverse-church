@@ -24,6 +24,8 @@ export default function SanctuaryLive() {
     hallelujah: 0,
   })
   const [floaters, setFloaters] = useState<FloatingEmoji[]>([])
+  const [liveVideoId, setLiveVideoId] = useState<string | null>(null)
+  const [liveChecked, setLiveChecked] = useState(false)
   const idRef = useRef(0)
   const channelRef = useRef<ReturnType<ReturnType<typeof createClient>['channel']> | null>(null)
 
@@ -33,6 +35,17 @@ export default function SanctuaryLive() {
     setTimeout(() => {
       setFloaters((prev) => prev.filter((f) => f.id !== id))
     }, 2500)
+  }, [])
+
+  // 현재 라이브 비디오 ID 조회 (60초 캐시)
+  useEffect(() => {
+    fetch('/api/youtube/live')
+      .then((r) => r.json())
+      .then(({ videoId }) => {
+        setLiveVideoId(videoId ?? null)
+        setLiveChecked(true)
+      })
+      .catch(() => setLiveChecked(true))
   }, [])
 
   useEffect(() => {
@@ -69,8 +82,6 @@ export default function SanctuaryLive() {
     })
   }
 
-  const CHANNEL_ID = process.env.NEXT_PUBLIC_YOUTUBE_CHANNEL_ID
-
   return (
     <>
       <style>{`
@@ -88,10 +99,10 @@ export default function SanctuaryLive() {
           className="relative w-full overflow-hidden rounded-2xl shadow-lg bg-black"
           style={{ paddingTop: '56.25%' }}
         >
-          {CHANNEL_ID ? (
+          {liveVideoId ? (
             <iframe
               className="absolute inset-0 w-full h-full"
-              src={`https://www.youtube.com/embed/live_stream?channel=${CHANNEL_ID}&autoplay=1&mute=1`}
+              src={`https://www.youtube.com/embed/${liveVideoId}?autoplay=1&mute=1`}
               title="주일예배 라이브"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
@@ -100,13 +111,16 @@ export default function SanctuaryLive() {
             /* 라이브 없을 때 placeholder */
             <div className="absolute inset-0 flex flex-col items-center justify-center text-white gap-3 px-4 text-center">
               <span className="text-6xl">⛪</span>
-              <p className="text-lg font-bold">예배 준비 중</p>
-              <p className="text-sm text-gray-400" style={{ wordBreak: 'keep-all' }}>
-                주일예배 라이브가 시작되면 이곳에 송출됩니다
-              </p>
-              <p className="text-xs text-gray-600 mt-2" style={{ wordBreak: 'keep-all' }}>
-                환경변수 NEXT_PUBLIC_YOUTUBE_CHANNEL_ID 를 설정하면 라이브가 자동 재생됩니다
-              </p>
+              {!liveChecked ? (
+                <p className="text-sm text-gray-400">라이브 확인 중...</p>
+              ) : (
+                <>
+                  <p className="text-lg font-bold">예배 준비 중</p>
+                  <p className="text-sm text-gray-400" style={{ wordBreak: 'keep-all' }}>
+                    주일예배 라이브가 시작되면 이곳에 자동으로 송출됩니다
+                  </p>
+                </>
+              )}
             </div>
           )}
 
