@@ -13,6 +13,7 @@ import ScheduleCalendar from '@/components/cell/notice/ScheduleCalendar'
 import MeetingTimer from '@/components/cell/timer/MeetingTimer'
 import MVPVote from '@/components/cell/mvp/MVPVote'
 import CellAlbum from '@/components/cell/album/CellAlbum'
+import JoinRequests from '@/components/cell/JoinRequests'
 
 // ── 타입 ──────────────────────────────────────────────────────
 interface Message {
@@ -25,7 +26,7 @@ interface Member {
 interface CellNote {
   id: number; userId: string; authorName: string; content: string; color: string; createdAt: string
 }
-type DrawerKey = 'word' | 'chat' | 'attendance' | 'prayer' | 'notice' | 'board' | 'timer' | 'mvp' | 'album'
+type DrawerKey = 'word' | 'chat' | 'attendance' | 'prayer' | 'notice' | 'board' | 'timer' | 'mvp' | 'album' | 'requests'
 
 // ── 쪽지 스타일 ───────────────────────────────────────────────
 const NOTE_COLORS = [
@@ -82,7 +83,7 @@ function ChatInput({ onSend }: { onSend: (text: string) => void }) {
 }
 
 // ── 보드 판 정의 ──────────────────────────────────────────────
-const BOARDS: { key: DrawerKey; icon: string; label: string; accent: string; glow: string }[] = [
+const BASE_BOARDS: { key: DrawerKey; icon: string; label: string; accent: string; glow: string }[] = [
   { key: 'word',       icon: '📖', label: '오늘의\n말씀',  accent: '#C9A227', glow: 'rgba(201,162,39,0.35)' },
   { key: 'chat',       icon: '💬', label: '대화방',        accent: '#60A5FA', glow: 'rgba(96,165,250,0.35)' },
   { key: 'attendance', icon: '✅', label: '출석\n체크',    accent: '#34D399', glow: 'rgba(52,211,153,0.35)' },
@@ -93,6 +94,7 @@ const BOARDS: { key: DrawerKey; icon: string; label: string; accent: string; glo
   { key: 'mvp',        icon: '👑', label: 'MVP\n투표',     accent: '#FBBF24', glow: 'rgba(251,191,36,0.35)'  },
   { key: 'album',      icon: '📷', label: '셀\n앨범',      accent: '#2DD4BF', glow: 'rgba(45,212,191,0.35)'  },
 ]
+const LEADER_BOARD = { key: 'requests' as DrawerKey, icon: '📋', label: '신청\n관리', accent: '#F87171', glow: 'rgba(248,113,113,0.35)' }
 
 export default function CellRoomPage() {
   const { id } = useParams<{ id: string }>()
@@ -110,6 +112,7 @@ export default function CellRoomPage() {
   const [isLive,      setIsLive]      = useState(false)
   const [activeDrawer,setActiveDrawer]= useState<DrawerKey | null>(null)
   const [newMsgCount, setNewMsgCount] = useState(0)
+  const [pendingCount, setPendingCount] = useState(0)
   const [notes,       setNotes]       = useState<CellNote[]>([])
   const [noteInput,   setNoteInput]   = useState('')
   const [noteColor,   setNoteColor]   = useState('yellow')
@@ -143,7 +146,16 @@ export default function CellRoomPage() {
       setAuthorized(ok)
       if (!ok) return
 
-      setIsLeader(profile?.role === 'cell_leader' || profile?.role === 'pastor' || profile?.role === 'youth_pastor')
+      const leader = profile?.role === 'cell_leader' || profile?.role === 'pastor' || profile?.role === 'youth_pastor'
+      setIsLeader(leader)
+
+      // 순장이면 대기 중인 신청 수 조회
+      if (leader) {
+        fetch(`/api/cell/join-request?cellId=${id}`)
+          .then(r => r.json())
+          .then(({ requests }) => setPendingCount(requests?.length ?? 0))
+          .catch(() => {})
+      }
 
       const me: Member = {
         userId: user.id, name: profile?.name ?? '성도',
@@ -324,6 +336,13 @@ export default function CellRoomPage() {
       case 'album':
         return <div className="p-4"><CellAlbum cellId={Number(id)} myUserId={myUserId} isLeader={isLeader} /></div>
 
+      case 'requests':
+        return (
+          <div className="flex-1 overflow-y-auto">
+            <JoinRequests cellId={Number(id)} />
+          </div>
+        )
+
       case 'board':
         return (
           <div className="flex flex-col h-full">
@@ -405,6 +424,7 @@ export default function CellRoomPage() {
     }
   }
 
+  const BOARDS = isLeader ? [...BASE_BOARDS, LEADER_BOARD] : BASE_BOARDS
   const activeBoard = BOARDS.find(b => b.key === activeDrawer)
 
   // ── 메인 렌더 ─────────────────────────────────────────────────
@@ -513,7 +533,7 @@ export default function CellRoomPage() {
           {/* 3×3 보드 그리드 */}
           <div className="grid grid-cols-3 gap-3">
             {BOARDS.map((board) => {
-              const badge = board.key === 'chat' ? newMsgCount : board.key === 'board' ? notes.length : 0
+              const badge = board.key === 'chat' ? newMsgCount : board.key === 'board' ? notes.length : board.key === 'requests' ? pendingCount : 0
               const isTimerActive = board.key === 'timer' && isLive
 
               return (
