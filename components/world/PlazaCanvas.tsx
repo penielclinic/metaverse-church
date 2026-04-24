@@ -93,9 +93,9 @@ export default function PlazaCanvas({ userId, name, skinTone, gender, hairStyle,
     setChatBubbles(prev => {
       const next = new Map(prev)
       // 동일 유저의 이전 말풍선 제거 후 새 메시지 등록
-      for (const [k, v] of next) {
+      Array.from(next.entries()).forEach(([k, v]) => {
         if (v.key.startsWith(msg.userId + ':')) next.delete(k)
-      }
+      })
       next.set(msg.userId, {
         content: msg.content,
         key: `${msg.userId}:${msg.id}`,
@@ -114,7 +114,7 @@ export default function PlazaCanvas({ userId, name, skinTone, gender, hairStyle,
     const id = setInterval(() => {
       const now = Date.now()
       setChatBubbles(prev => {
-        const cleaned = new Map([...prev].filter(([, v]) => v.expiresAt > now))
+        const cleaned = new Map(Array.from(prev.entries()).filter(([, v]) => v.expiresAt > now))
         return cleaned.size === prev.size ? prev : cleaned
       })
     }, 500)
@@ -198,9 +198,9 @@ export default function PlazaCanvas({ userId, name, skinTone, gender, hairStyle,
       // 내 말풍선 즉시 표시 (broadcast는 자신에게 돌아오지 않음)
       setChatBubbles(prev => {
         const next = new Map(prev)
-        for (const [k, v] of next) {
+        Array.from(next.entries()).forEach(([k, v]) => {
           if (v.key.startsWith(userId + ':')) next.delete(k)
-        }
+        })
         next.set(userId, {
           content: msg.content,
           key: `${userId}:${msg.id}`,
