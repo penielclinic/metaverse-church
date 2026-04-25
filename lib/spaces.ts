@@ -49,7 +49,6 @@ export const SPACES: SpaceConfig[] = [
     emoji: '🛍️',
     description: '성도들이 나누는 물품·재능 나눔',
     path: '/world/market',
-    disabled: true,
   },
   {
     slug: 'gallery',
