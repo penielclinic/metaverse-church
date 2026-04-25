@@ -56,7 +56,6 @@ export const SPACES: SpaceConfig[] = [
     emoji: '🖼️',
     description: '교회 사진·행사 추억을 함께 봐요',
     path: '/world/gallery',
-    disabled: true,
   },
   {
     slug: 'counsel',
