@@ -19,6 +19,12 @@ interface MissionPost {
   title: string
   content: string
   imageUrl: string | null
+  activityDate: string | null
+  location: string | null
+  participantCount: number | null
+  activityType: string | null
+  participationCount: number
+  myParticipation: boolean
   createdAt: string
   authorName: string
 }
@@ -51,10 +57,13 @@ export default function MissionPage() {
   const [myRole, setMyRole]               = useState('')
   const [myMissionId, setMyMissionId]     = useState<number | null>(null)
 
+  // 배지 알림 상태
+  const [badgeToast, setBadgeToast] = useState<{ name: string } | null>(null)
+
   // 모달 상태
   const [showPostModal, setShowPostModal]     = useState(false)
   const [showPrayerModal, setShowPrayerModal] = useState(false)
-  const [postForm, setPostForm]               = useState({ title: '', content: '' })
+  const [postForm, setPostForm]               = useState({ title: '', content: '', activityDate: '', location: '', participantCount: '', activityType: '' })
   const [prayerForm, setPrayerForm]           = useState({ content: '', isAnonymous: false })
   const [saving, setSaving]                   = useState(false)
   const [expandedPost, setExpandedPost]       = useState<number | null>(null)
@@ -116,20 +125,26 @@ export default function MissionPage() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data } = await (supabase as any)
       .from('mission_posts')
-      .select('id, mission_id, user_id, title, content, image_url, created_at, profiles:user_id ( name )')
+      .select('id, mission_id, user_id, title, content, image_url, activity_date, location, participant_count, activity_type, participation_count, created_at, profiles:user_id ( name ), mission_participations ( user_id )')
       .eq('mission_id', missionId)
       .order('created_at', { ascending: false })
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     setPosts((data ?? []).map((r: any) => ({
-      id:         r.id,
-      missionId:  r.mission_id,
-      userId:     r.user_id,
-      title:      r.title,
-      content:    r.content,
-      imageUrl:   r.image_url,
-      createdAt:  r.created_at,
-      authorName: (r.profiles as { name: string } | null)?.name ?? '선교회',
+      id:                 r.id,
+      missionId:          r.mission_id,
+      userId:             r.user_id,
+      title:              r.title,
+      content:            r.content,
+      imageUrl:           r.image_url,
+      activityDate:       r.activity_date ?? null,
+      location:           r.location ?? null,
+      participantCount:   r.participant_count ?? null,
+      activityType:       r.activity_type ?? null,
+      participationCount: r.participation_count ?? 0,
+      myParticipation:    (r.mission_participations ?? []).some((p: { user_id: string }) => p.user_id === myUserId),
+      createdAt:          r.created_at,
+      authorName:         (r.profiles as { name: string } | null)?.name ?? '선교회',
     })))
     setLoading(false)
   }, [supabase])
@@ -171,11 +186,20 @@ export default function MissionPage() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase as any)
       .from('mission_posts')
-      .insert({ mission_id: selectedId, user_id: myUserId, title: postForm.title.trim(), content: postForm.content.trim() })
+      .insert({
+        mission_id:        selectedId,
+        user_id:           myUserId,
+        title:             postForm.title.trim(),
+        content:           postForm.content.trim(),
+        activity_date:     postForm.activityDate || null,
+        location:          postForm.location.trim() || null,
+        participant_count: postForm.participantCount ? Number(postForm.participantCount) : null,
+        activity_type:     postForm.activityType || null,
+      })
     setSaving(false)
     if (error) { alert(error.message); return }
     setShowPostModal(false)
-    setPostForm({ title: '', content: '' })
+    setPostForm({ title: '', content: '', activityDate: '', location: '', participantCount: '', activityType: '' })
     loadPosts(selectedId)
   }
 
@@ -192,6 +216,50 @@ export default function MissionPage() {
     setShowPrayerModal(false)
     setPrayerForm({ content: '', isAnonymous: false })
     loadPrayers(selectedId)
+  }
+
+  // ── 선교 활동 참여 토글 ──────────────────────────────────────
+  const toggleParticipation = async (post: MissionPost) => {
+    if (!myUserId) return
+    if (post.myParticipation) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase as any)
+        .from('mission_participations')
+        .delete().eq('post_id', post.id).eq('user_id', myUserId)
+    } else {
+      // 참여 전 배지 수 스냅샷
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { count: beforeCount } = await (supabase as any)
+        .from('user_badges').select('id', { count: 'exact', head: true }).eq('user_id', myUserId)
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase as any)
+        .from('mission_participations')
+        .insert({ post_id: post.id, user_id: myUserId })
+
+      // 새 배지 확인
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: newBadges } = await (supabase as any)
+        .from('user_badges')
+        .select('badge_definitions ( name )')
+        .eq('user_id', myUserId)
+        .order('earned_at', { ascending: false })
+        .limit(1)
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { count: afterCount } = await (supabase as any)
+        .from('user_badges').select('id', { count: 'exact', head: true }).eq('user_id', myUserId)
+
+      if (afterCount > (beforeCount ?? 0) && newBadges?.[0]) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const badgeName = (newBadges[0].badge_definitions as any)?.name
+        if (badgeName) {
+          setBadgeToast({ name: badgeName })
+          setTimeout(() => setBadgeToast(null), 4000)
+        }
+      }
+    }
+    if (selectedId) loadPosts(selectedId)
   }
 
   // ── 아멘 토글 ────────────────────────────────────────────────
@@ -239,6 +307,17 @@ export default function MissionPage() {
   // ── 렌더 ─────────────────────────────────────────────────────
   return (
     <div className="pb-24 min-h-screen bg-gray-50">
+      {/* 배지 획득 토스트 */}
+      {badgeToast && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-white border border-yellow-300 shadow-xl rounded-2xl px-5 py-3 flex items-center gap-3 animate-bounce">
+          <span className="text-2xl">🎖️</span>
+          <div>
+            <p className="text-xs text-yellow-600 font-semibold">새 배지 획득!</p>
+            <p className="text-sm font-bold text-gray-800 whitespace-nowrap">{badgeToast.name}</p>
+          </div>
+        </div>
+      )}
+
       {/* 헤더 */}
       <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 pt-3 pb-0">
         <h1 className="text-lg font-bold text-gray-800 mb-2">✈️ 선교</h1>
@@ -324,6 +403,31 @@ export default function MissionPage() {
               <div key={post.id} className="bg-white rounded-2xl border border-gray-200 shadow-sm px-4 py-3">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
+                    {/* 활동 메타 뱃지 */}
+                    {(post.activityType || post.activityDate || post.location || post.participantCount) && (
+                      <div className="flex flex-wrap gap-1 mb-1.5">
+                        {post.activityType && (
+                          <span className="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-[11px] font-semibold whitespace-nowrap">
+                            {post.activityType}
+                          </span>
+                        )}
+                        {post.activityDate && (
+                          <span className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 text-[11px] whitespace-nowrap">
+                            {new Date(post.activityDate).toLocaleDateString('ko-KR')}
+                          </span>
+                        )}
+                        {post.location && (
+                          <span className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 text-[11px] whitespace-nowrap">
+                            📍 {post.location}
+                          </span>
+                        )}
+                        {post.participantCount && (
+                          <span className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 text-[11px] whitespace-nowrap">
+                            👥 {post.participantCount}명
+                          </span>
+                        )}
+                      </div>
+                    )}
                     <p className="font-bold text-gray-800 text-sm" style={{ wordBreak: 'keep-all' }}>{post.title}</p>
                     <div className="flex items-center gap-2 mt-0.5">
                       <span className="text-xs text-gray-400 whitespace-nowrap">{post.authorName}</span>
@@ -353,6 +457,21 @@ export default function MissionPage() {
                     {expandedPost === post.id ? '접기' : '더보기'}
                   </button>
                 )}
+                <div className="flex justify-end mt-2">
+                  <button
+                    onClick={() => toggleParticipation(post)}
+                    className={[
+                      'flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors',
+                      post.myParticipation
+                        ? 'bg-indigo-600 text-white'
+                        : 'bg-gray-100 text-gray-600 hover:bg-indigo-50',
+                    ].join(' ')}
+                  >
+                    ✋ 참여했어요
+                    {!post.myParticipation && <span className="text-indigo-400 font-bold">+30 XP</span>}
+                    {post.participationCount > 0 && <span>{post.participationCount}</span>}
+                  </button>
+                </div>
               </div>
             ))}
           </>
@@ -430,9 +549,56 @@ export default function MissionPage() {
       {/* ── 활동 글 모달 ── */}
       {showPostModal && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 px-4 pb-4 sm:pb-0">
-          <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-5">
+          <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-5 max-h-[90vh] overflow-y-auto">
             <h2 className="text-base font-bold text-gray-800 mb-4">활동 소식 작성</h2>
 
+            {/* 활동 유형 */}
+            <label className="block text-xs font-semibold text-gray-600 mb-1">활동 유형</label>
+            <select
+              value={postForm.activityType}
+              onChange={e => setPostForm(f => ({ ...f, activityType: e.target.value }))}
+              className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white"
+            >
+              <option value="">선택 안함</option>
+              <option value="전도">전도</option>
+              <option value="봉사">봉사</option>
+              <option value="예배">예배</option>
+              <option value="친교">친교</option>
+              <option value="기타">기타</option>
+            </select>
+
+            {/* 활동 날짜 */}
+            <label className="block text-xs font-semibold text-gray-600 mb-1">활동 날짜</label>
+            <input
+              type="date"
+              value={postForm.activityDate}
+              onChange={e => setPostForm(f => ({ ...f, activityDate: e.target.value }))}
+              className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+            />
+
+            {/* 활동 장소 */}
+            <label className="block text-xs font-semibold text-gray-600 mb-1">활동 장소</label>
+            <input
+              type="text"
+              value={postForm.location}
+              onChange={e => setPostForm(f => ({ ...f, location: e.target.value }))}
+              placeholder="예: 해운대구 경로당"
+              maxLength={50}
+              className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+            />
+
+            {/* 참여 인원 */}
+            <label className="block text-xs font-semibold text-gray-600 mb-1">참여 인원</label>
+            <input
+              type="number"
+              value={postForm.participantCount}
+              onChange={e => setPostForm(f => ({ ...f, participantCount: e.target.value }))}
+              placeholder="명"
+              min={1}
+              className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+            />
+
+            {/* 제목 */}
             <label className="block text-xs font-semibold text-gray-600 mb-1">제목 <span className="text-red-400">*</span></label>
             <input
               type="text"
@@ -443,18 +609,19 @@ export default function MissionPage() {
               className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-indigo-300"
             />
 
+            {/* 내용 */}
             <label className="block text-xs font-semibold text-gray-600 mb-1">내용 <span className="text-red-400">*</span></label>
             <textarea
               value={postForm.content}
               onChange={e => setPostForm(f => ({ ...f, content: e.target.value }))}
               placeholder="활동 내용을 입력해주세요"
-              rows={5}
+              rows={4}
               className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm mb-4 resize-none focus:outline-none focus:ring-2 focus:ring-indigo-300"
             />
 
             <div className="flex gap-2">
               <button
-                onClick={() => { setShowPostModal(false); setPostForm({ title: '', content: '' }) }}
+                onClick={() => { setShowPostModal(false); setPostForm({ title: '', content: '', activityDate: '', location: '', participantCount: '', activityType: '' }) }}
                 className="flex-1 py-3 rounded-xl border border-gray-300 text-sm text-gray-600 min-h-[44px]"
               >
                 취소
