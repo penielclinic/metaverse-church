@@ -8,6 +8,7 @@ interface Member {
   name: string
   phone: string | null
   role: string
+  cellId: number | null
   cellName: string | null
   missionName: string | null
 }
@@ -64,7 +65,7 @@ export default function MembersPage() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let q: any = supabase
       .from('profiles')
-      .select(`id, name, phone, role, cells ( name ), missions ( name )`)
+      .select(`id, name, phone, role, cell_id, cells ( name ), missions ( name )`)
       .order('name')
 
     // 역할별 조회 범위 제한
@@ -88,6 +89,7 @@ export default function MembersPage() {
         name: m.name,
         phone: m.phone,
         role: m.role,
+        cellId: m.cell_id ?? null,
         cellName: m.cells?.name ?? null,
         missionName: m.missions?.name ?? null,
       }))
@@ -102,11 +104,17 @@ export default function MembersPage() {
   const saveEdit = async () => {
     if (!editing) return
     setSaving(true)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase.from('profiles') as any)
-      .update({ role: editing.role, cell_id: editing.cellId })
-      .eq('id', editing.id)
+    const res = await fetch('/api/admin/assign-member', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: editing.id, role: editing.role, cellId: editing.cellId }),
+    })
     setSaving(false)
+    if (!res.ok) {
+      const { error } = await res.json()
+      alert(error ?? '저장 실패')
+      return
+    }
     setEditing(null)
     load()
   }
@@ -162,7 +170,7 @@ export default function MembersPage() {
                 </div>
                 {canEditRole && (
                   <button
-                    onClick={() => setEditing({ id: m.id, role: m.role, cellId: null })}
+                    onClick={() => setEditing({ id: m.id, role: m.role, cellId: m.cellId })}
                     className="flex-shrink-0 text-xs px-3 py-1.5 rounded-full border border-gray-300 text-gray-600 hover:bg-gray-50 transition-colors whitespace-nowrap"
                   >
                     편집
