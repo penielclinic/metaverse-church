@@ -70,6 +70,5 @@ export const SPACES: SpaceConfig[] = [
     emoji: '✈️',
     description: '선교회별 활동 현황과 기도 요청',
     path: '/world/mission',
-    disabled: true,
   },
 ]
