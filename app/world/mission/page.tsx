@@ -19,7 +19,8 @@ interface MissionPost {
   title: string
   content: string
   imageUrl: string | null
-  activityDate: string | null
+  activityDateFrom: string | null
+  activityDateTo: string | null
   location: string | null
   participantCount: number | null
   activityType: string | null
@@ -63,7 +64,7 @@ export default function MissionPage() {
   // 모달 상태
   const [showPostModal, setShowPostModal]     = useState(false)
   const [showPrayerModal, setShowPrayerModal] = useState(false)
-  const [postForm, setPostForm]               = useState({ title: '', content: '', activityDate: '', location: '', participantCount: '', activityType: '' })
+  const [postForm, setPostForm]               = useState({ title: '', content: '', activityDateFrom: '', activityDateTo: '', location: '', participantCount: '', activityType: '' })
   const [prayerForm, setPrayerForm]           = useState({ content: '', isAnonymous: false })
   const [saving, setSaving]                   = useState(false)
   const [expandedPost, setExpandedPost]       = useState<number | null>(null)
@@ -125,7 +126,7 @@ export default function MissionPage() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data } = await (supabase as any)
       .from('mission_posts')
-      .select('id, mission_id, user_id, title, content, image_url, activity_date, location, participant_count, activity_type, participation_count, created_at, profiles:user_id ( name ), mission_participations ( user_id )')
+      .select('id, mission_id, user_id, title, content, image_url, activity_date_from, activity_date_to, location, participant_count, activity_type, participation_count, created_at, profiles:user_id ( name ), mission_participations ( user_id )')
       .eq('mission_id', missionId)
       .order('created_at', { ascending: false })
 
@@ -137,7 +138,8 @@ export default function MissionPage() {
       title:              r.title,
       content:            r.content,
       imageUrl:           r.image_url,
-      activityDate:       r.activity_date ?? null,
+      activityDateFrom:   r.activity_date_from ?? null,
+      activityDateTo:     r.activity_date_to ?? null,
       location:           r.location ?? null,
       participantCount:   r.participant_count ?? null,
       activityType:       r.activity_type ?? null,
@@ -191,7 +193,8 @@ export default function MissionPage() {
         user_id:           myUserId,
         title:             postForm.title.trim(),
         content:           postForm.content.trim(),
-        activity_date:     postForm.activityDate || null,
+        activity_date_from: postForm.activityDateFrom || null,
+        activity_date_to:   postForm.activityDateTo || null,
         location:          postForm.location.trim() || null,
         participant_count: postForm.participantCount ? Number(postForm.participantCount) : null,
         activity_type:     postForm.activityType || null,
@@ -199,7 +202,7 @@ export default function MissionPage() {
     setSaving(false)
     if (error) { alert(error.message); return }
     setShowPostModal(false)
-    setPostForm({ title: '', content: '', activityDate: '', location: '', participantCount: '', activityType: '' })
+    setPostForm({ title: '', content: '', activityDateFrom: '', activityDateTo: '', location: '', participantCount: '', activityType: '' })
     loadPosts(selectedId)
   }
 
@@ -404,18 +407,29 @@ export default function MissionPage() {
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
                     {/* 활동 메타 뱃지 */}
-                    {(post.activityType || post.activityDate || post.location || post.participantCount) && (
+                    {(post.activityType || post.activityDateFrom || post.location || post.participantCount) && (
                       <div className="flex flex-wrap gap-1 mb-1.5">
                         {post.activityType && (
                           <span className="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-[11px] font-semibold whitespace-nowrap">
                             {post.activityType}
                           </span>
                         )}
-                        {post.activityDate && (
-                          <span className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 text-[11px] whitespace-nowrap">
-                            {new Date(post.activityDate).toLocaleDateString('ko-KR')}
-                          </span>
-                        )}
+                        {post.activityDateFrom && (() => {
+                          const fmt = (d: string) => new Date(d).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' })
+                          if (post.activityDateTo && post.activityDateTo !== post.activityDateFrom) {
+                            const days = Math.round((new Date(post.activityDateTo).getTime() - new Date(post.activityDateFrom).getTime()) / 86400000) + 1
+                            return (
+                              <span className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 text-[11px] whitespace-nowrap">
+                                📅 {fmt(post.activityDateFrom)} ~ {fmt(post.activityDateTo)} ({days}일간)
+                              </span>
+                            )
+                          }
+                          return (
+                            <span className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 text-[11px] whitespace-nowrap">
+                              📅 {fmt(post.activityDateFrom)}
+                            </span>
+                          )
+                        })()}
                         {post.location && (
                           <span className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 text-[11px] whitespace-nowrap">
                             📍 {post.location}
@@ -569,12 +583,28 @@ export default function MissionPage() {
 
             {/* 활동 날짜 */}
             <label className="block text-xs font-semibold text-gray-600 mb-1">활동 날짜</label>
-            <input
-              type="date"
-              value={postForm.activityDate}
-              onChange={e => setPostForm(f => ({ ...f, activityDate: e.target.value }))}
-              className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-indigo-300"
-            />
+            <div className="flex items-center gap-2 mb-1">
+              <input
+                type="date"
+                value={postForm.activityDateFrom}
+                onChange={e => setPostForm(f => ({ ...f, activityDateFrom: e.target.value }))}
+                className="flex-1 border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
+              />
+              <span className="text-gray-400 text-sm flex-shrink-0">~</span>
+              <input
+                type="date"
+                value={postForm.activityDateTo}
+                min={postForm.activityDateFrom || undefined}
+                onChange={e => setPostForm(f => ({ ...f, activityDateTo: e.target.value }))}
+                className="flex-1 border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
+              />
+            </div>
+            {postForm.activityDateFrom && postForm.activityDateTo && postForm.activityDateTo >= postForm.activityDateFrom && (
+              <p className="text-xs text-indigo-500 mb-3">
+                {Math.round((new Date(postForm.activityDateTo).getTime() - new Date(postForm.activityDateFrom).getTime()) / 86400000) + 1}일간
+              </p>
+            )}
+            {!(postForm.activityDateFrom && postForm.activityDateTo) && <div className="mb-3" />}
 
             {/* 활동 장소 */}
             <label className="block text-xs font-semibold text-gray-600 mb-1">활동 장소</label>
@@ -621,7 +651,7 @@ export default function MissionPage() {
 
             <div className="flex gap-2">
               <button
-                onClick={() => { setShowPostModal(false); setPostForm({ title: '', content: '', activityDate: '', location: '', participantCount: '', activityType: '' }) }}
+                onClick={() => { setShowPostModal(false); setPostForm({ title: '', content: '', activityDateFrom: '', activityDateTo: '', location: '', participantCount: '', activityType: '' }) }}
                 className="flex-1 py-3 rounded-xl border border-gray-300 text-sm text-gray-600 min-h-[44px]"
               >
                 취소
