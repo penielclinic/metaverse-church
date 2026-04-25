@@ -23,6 +23,7 @@ interface MissionPost {
   activityDateTo: string | null
   location: string | null
   participantCount: number | null
+  memberNames: string[]
   activityType: string | null
   participationCount: number
   myParticipation: boolean
@@ -65,6 +66,8 @@ export default function MissionPage() {
   const [showPostModal, setShowPostModal]     = useState(false)
   const [showPrayerModal, setShowPrayerModal] = useState(false)
   const [postForm, setPostForm]               = useState({ title: '', content: '', activityDateFrom: '', activityDateTo: '', location: '', participantCount: '', activityType: '' })
+  const [memberInput, setMemberInput]         = useState('')
+  const [memberList, setMemberList]           = useState<string[]>([])
   const [prayerForm, setPrayerForm]           = useState({ content: '', isAnonymous: false })
   const [saving, setSaving]                   = useState(false)
   const [expandedPost, setExpandedPost]       = useState<number | null>(null)
@@ -126,7 +129,7 @@ export default function MissionPage() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data } = await (supabase as any)
       .from('mission_posts')
-      .select('id, mission_id, user_id, title, content, image_url, activity_date_from, activity_date_to, location, participant_count, activity_type, participation_count, created_at, profiles:user_id ( name ), mission_participations ( user_id )')
+      .select('id, mission_id, user_id, title, content, image_url, activity_date_from, activity_date_to, location, participant_count, activity_type, participation_count, created_at, profiles:user_id ( name ), mission_participations ( user_id ), mission_post_members ( name )')
       .eq('mission_id', missionId)
       .order('created_at', { ascending: false })
 
@@ -142,6 +145,7 @@ export default function MissionPage() {
       activityDateTo:     r.activity_date_to ?? null,
       location:           r.location ?? null,
       participantCount:   r.participant_count ?? null,
+      memberNames:        (r.mission_post_members ?? []).map((m: { name: string }) => m.name),
       activityType:       r.activity_type ?? null,
       participationCount: r.participation_count ?? 0,
       myParticipation:    (r.mission_participations ?? []).some((p: { user_id: string }) => p.user_id === myUserId),
@@ -196,13 +200,35 @@ export default function MissionPage() {
         activity_date_from: postForm.activityDateFrom || null,
         activity_date_to:   postForm.activityDateTo || null,
         location:          postForm.location.trim() || null,
-        participant_count: postForm.participantCount ? Number(postForm.participantCount) : null,
+        participant_count: memberList.length > 0 ? memberList.length : (postForm.participantCount ? Number(postForm.participantCount) : null),
         activity_type:     postForm.activityType || null,
       })
     setSaving(false)
     if (error) { alert(error.message); return }
+
+    // 명단 저장
+    if (memberList.length > 0) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: newPost } = await (supabase as any)
+        .from('mission_posts')
+        .select('id')
+        .eq('mission_id', selectedId)
+        .eq('user_id', myUserId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single()
+      if (newPost) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (supabase as any)
+          .from('mission_post_members')
+          .insert(memberList.map(name => ({ post_id: newPost.id, name })))
+      }
+    }
+
     setShowPostModal(false)
     setPostForm({ title: '', content: '', activityDateFrom: '', activityDateTo: '', location: '', participantCount: '', activityType: '' })
+    setMemberList([])
+    setMemberInput('')
     loadPosts(selectedId)
   }
 
@@ -435,9 +461,9 @@ export default function MissionPage() {
                             📍 {post.location}
                           </span>
                         )}
-                        {post.participantCount && (
+                        {(post.memberNames.length > 0 || post.participantCount) && (
                           <span className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 text-[11px] whitespace-nowrap">
-                            👥 {post.participantCount}명
+                            👥 {post.memberNames.length > 0 ? post.memberNames.length : post.participantCount}명
                           </span>
                         )}
                       </div>
@@ -470,6 +496,16 @@ export default function MissionPage() {
                   >
                     {expandedPost === post.id ? '접기' : '더보기'}
                   </button>
+                )}
+                {post.memberNames.length > 0 && (
+                  <div className="mt-2 pt-2 border-t border-gray-100">
+                    <p className="text-[11px] text-gray-400 mb-1">참가자 명단</p>
+                    <div className="flex flex-wrap gap-1">
+                      {post.memberNames.map((name, i) => (
+                        <span key={i} className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-full text-[11px] whitespace-nowrap">{name}</span>
+                      ))}
+                    </div>
+                  </div>
                 )}
                 <div className="flex justify-end mt-2">
                   <button
@@ -617,16 +653,60 @@ export default function MissionPage() {
               className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-indigo-300"
             />
 
-            {/* 참여 인원 */}
-            <label className="block text-xs font-semibold text-gray-600 mb-1">참여 인원</label>
-            <input
-              type="number"
-              value={postForm.participantCount}
-              onChange={e => setPostForm(f => ({ ...f, participantCount: e.target.value }))}
-              placeholder="명"
-              min={1}
-              className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-indigo-300"
-            />
+            {/* 참가자 명단 */}
+            <label className="block text-xs font-semibold text-gray-600 mb-1">
+              참가자 명단
+              {memberList.length > 0 && <span className="ml-1 text-indigo-500">{memberList.length}명</span>}
+            </label>
+            <div className="flex gap-2 mb-2">
+              <input
+                type="text"
+                value={memberInput}
+                onChange={e => setMemberInput(e.target.value)}
+                onKeyDown={e => {
+                  if ((e.key === 'Enter' || e.key === ',') && memberInput.trim()) {
+                    e.preventDefault()
+                    const name = memberInput.trim()
+                    if (!memberList.includes(name)) setMemberList(l => [...l, name])
+                    setMemberInput('')
+                  }
+                }}
+                placeholder="이름 입력 후 Enter"
+                className="flex-1 border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  const name = memberInput.trim()
+                  if (name && !memberList.includes(name)) setMemberList(l => [...l, name])
+                  setMemberInput('')
+                }}
+                className="px-3 py-2 bg-indigo-100 text-indigo-700 rounded-xl text-sm font-semibold"
+              >
+                추가
+              </button>
+            </div>
+            {memberList.length > 0 && (
+              <div className="flex flex-wrap gap-1 mb-3">
+                {memberList.map((name, i) => (
+                  <span key={i} className="flex items-center gap-1 px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-full text-xs">
+                    {name}
+                    <button onClick={() => setMemberList(l => l.filter((_, j) => j !== i))} className="text-indigo-400 hover:text-red-400">×</button>
+                  </span>
+                ))}
+              </div>
+            )}
+            {memberList.length === 0 && (
+              <input
+                type="number"
+                value={postForm.participantCount}
+                onChange={e => setPostForm(f => ({ ...f, participantCount: e.target.value }))}
+                placeholder="명단 없이 인원 수만 입력"
+                min={1}
+                className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+              />
+            )}
+            {memberList.length > 0 && <div className="mb-1" />}
 
             {/* 제목 */}
             <label className="block text-xs font-semibold text-gray-600 mb-1">제목 <span className="text-red-400">*</span></label>
@@ -651,7 +731,7 @@ export default function MissionPage() {
 
             <div className="flex gap-2">
               <button
-                onClick={() => { setShowPostModal(false); setPostForm({ title: '', content: '', activityDateFrom: '', activityDateTo: '', location: '', participantCount: '', activityType: '' }) }}
+                onClick={() => { setShowPostModal(false); setPostForm({ title: '', content: '', activityDateFrom: '', activityDateTo: '', location: '', participantCount: '', activityType: '' }); setMemberList([]); setMemberInput('') }}
                 className="flex-1 py-3 rounded-xl border border-gray-300 text-sm text-gray-600 min-h-[44px]"
               >
                 취소
