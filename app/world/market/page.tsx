@@ -159,7 +159,8 @@ export default function MarketPage() {
   const handleSubmit = async () => {
     if (!form.title.trim() || !myUserId) return
     setSubmitting(true)
-    await supabase.from('sharing_items').insert({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase.from('sharing_items') as any).insert({
       user_id: myUserId,
       title: form.title.trim(),
       description: form.description.trim() || null,
@@ -175,14 +176,16 @@ export default function MarketPage() {
   }
 
   const updateStatus = async (id: number, status: ItemStatus) => {
-    await supabase.from('sharing_items').update({ status }).eq('id', id)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase.from('sharing_items') as any).update({ status }).eq('id', id)
     setDetail(null)
     load()
   }
 
   const deleteItem = async (id: number) => {
     if (!confirm('삭제할까요?')) return
-    await supabase.from('sharing_items').delete().eq('id', id)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase.from('sharing_items') as any).delete().eq('id', id)
     setDetail(null)
     load()
   }
