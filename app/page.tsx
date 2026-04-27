@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import AdminButton from '@/components/ui/AdminButton'
 
 export default function Home() {
   return (
@@ -48,6 +49,8 @@ export default function Home() {
       <p className="text-indigo-400 text-sm text-center" style={{ wordBreak: 'keep-all' }}>
         성도 798명 · 셀 44개 · 선교회 12개
       </p>
+
+      <AdminButton />
     </main>
   )
 }
