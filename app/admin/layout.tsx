@@ -5,7 +5,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 
-const ADMIN_ROLES = ['pastor', 'school_pastor', 'mission_leader', 'youth_pastor', 'school_teacher', 'cell_leader']
+const ADMIN_ROLES = ['pastor', 'school_pastor', 'mission_leader', 'youth_pastor', 'youth_leader', 'youth_vice_leader', 'youth_secretary', 'school_teacher', 'cell_leader']
 
 const NAV = [
   { href: '/admin',          label: '대시보드', emoji: '📊' },
@@ -50,7 +50,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const ROLE_LABEL: Record<string, string> = {
     pastor: '담임목사', school_pastor: '교회학교 목사', mission_leader: '선교회장',
-    youth_pastor: '청년부 교역자', school_teacher: '교회학교 교사', cell_leader: '순장',
+    youth_pastor: '청년부 교역자', school_teacher: '교회학교 교사',
+    youth_leader: '청년회장', youth_vice_leader: '청년부회장', youth_secretary: '청년부총무',
+    cell_leader: '순장',
   }
 
   return (

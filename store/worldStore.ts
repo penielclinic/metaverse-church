@@ -19,8 +19,8 @@ interface WorldState {
 }
 
 export const useWorldStore = create<WorldState>((set, get) => ({
-  currentSpaceSlug: 'plaza',
-  currentSpaceName: '교제광장',
+  currentSpaceSlug: 'world',
+  currentSpaceName: '대시보드',
   onlineUsers: [],
   totalOnline: 0,
 

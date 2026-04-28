@@ -68,11 +68,12 @@ export default function PlazaCanvas({ userId, name, skinTone, gender, hairStyle,
   const floorRef  = useRef<HTMLDivElement>(null)
   const moveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const [myPos,     setMyPos]     = useState({ x: INIT_X, y: INIT_Y })
-  const [myBench,   setMyBench]   = useState<{ benchId: string; seatIndex: number } | null>(null)
-  const [others,    setOthers]    = useState<PresenceUser[]>([])
-  const [moving,    setMoving]    = useState(false)
-  const [toast,     setToast]     = useState('')
+  const [myPos,      setMyPos]     = useState({ x: INIT_X, y: INIT_Y })
+  const [myBench,    setMyBench]   = useState<{ benchId: string; seatIndex: number } | null>(null)
+  const [others,     setOthers]    = useState<PresenceUser[]>([])
+  const [moving,     setMoving]    = useState(false)
+  const [toast,      setToast]     = useState('')
+  const [connected,  setConnected] = useState(false)
 
   // 채팅 상태: userId → { content, key, expiresAt }
   const [chatBubbles, setChatBubbles] = useState<Map<string, ActiveBubble & { expiresAt: number }>>(new Map())
@@ -105,8 +106,13 @@ export default function PlazaCanvas({ userId, name, skinTone, gender, hairStyle,
     })
   }, [])
 
+  const handleSync = useCallback((users: PresenceUser[]) => {
+    setOthers(users)
+    setConnected(true)
+  }, [])
+
   const { trackPosition, sendChat } = usePlazaPresence({
-    spaceId: 'plaza', me, onSync: setOthers, onChat: handleChat,
+    spaceId: 'plaza', me, onSync: handleSync, onChat: handleChat,
   })
 
   // 만료된 말풍선 정리
@@ -371,9 +377,22 @@ export default function PlazaCanvas({ userId, name, skinTone, gender, hairStyle,
 
           {/* 안내 텍스트 */}
           <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 whitespace-nowrap"
-            style={{ pointerEvents: 'none', fontSize: 11, color: 'rgba(100,80,50,0.7)', fontWeight: 600, letterSpacing: 1 }}>
+            style={{
+              pointerEvents: 'none', fontSize: 11, fontWeight: 700, letterSpacing: 1,
+              color: '#3d2800',
+              textShadow: '0 1px 3px rgba(255,240,200,0.9), 0 0 6px rgba(255,240,200,0.7)',
+            }}>
             해운대순복음교회 · 바닥 클릭: 이동 · 벤치 클릭: 앉기
           </div>
+        </div>
+
+        {/* 실시간 연결 상태 */}
+        <div className="absolute top-2 right-2 flex items-center gap-1 px-2 py-1 rounded-full pointer-events-none z-50"
+          style={{ background: 'rgba(0,0,0,0.45)' }}>
+          <span className={`inline-block w-2 h-2 rounded-full ${connected ? 'bg-green-400' : 'bg-yellow-400 animate-pulse'}`} />
+          <span className="text-white text-[10px] font-bold">
+            {connected ? `${others.length + 1}명` : '연결 중…'}
+          </span>
         </div>
 
         {/* 토스트 */}
@@ -569,10 +588,13 @@ function AvatarMarker({
       </div>
 
       {/* 이름 뱃지 */}
-      <div className={[
-        'mt-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold shadow-sm whitespace-nowrap',
-        avatar.isMe ? 'bg-blue-500 text-white' : 'bg-white/90 text-gray-700',
-      ].join(' ')}>
+      <div
+        className={[
+          'mt-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap',
+          avatar.isMe ? 'bg-blue-600 text-white' : 'bg-white text-gray-900',
+        ].join(' ')}
+        style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.35)' }}
+      >
         {isSeated && '🪑 '}{avatar.isMe ? '나' : avatar.name}
       </div>
 

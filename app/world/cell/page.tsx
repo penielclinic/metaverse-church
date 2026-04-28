@@ -7,6 +7,9 @@ import { useWorldStore } from '@/store/worldStore'
 
 // 이름에 '전체방'이 포함된 셀은 같은 선교회 소속이면 누구나 입장 가능
 const OPEN_ROOM_KEYWORD = '전체방'
+// 임원모임방: 청년 임원(회장·부회장·총무) + 교역자·목사만 입장
+const EXEC_ROOM_KEYWORD = '임원모임방'
+const EXEC_ROLES = ['pastor', 'youth_pastor', 'youth_leader', 'youth_vice_leader', 'youth_secretary']
 
 interface Cell {
   id: number
@@ -87,6 +90,10 @@ export default function CellPage() {
 
   const canEnter = (cell: Cell) => {
     if (!myProfile) return false
+    // 임원모임방: 청년 임원 직분 + 교역자·목사만
+    if (cell.name.includes(EXEC_ROOM_KEYWORD)) {
+      return EXEC_ROLES.includes(myProfile.role)
+    }
     if (myProfile.role === 'pastor' || myProfile.role === 'youth_pastor') return true
     // 전체방: 같은 선교회 소속이면 입장 가능
     if (cell.name.includes(OPEN_ROOM_KEYWORD)) {
@@ -173,22 +180,26 @@ export default function CellPage() {
                     {groupCells.map((cell) => {
                       const mine = myProfile?.cell_id === cell.id
                       const isOpen = cell.name.includes(OPEN_ROOM_KEYWORD)
+                      const isExec = cell.name.includes(EXEC_ROOM_KEYWORD)
                       const enter = canEnter(cell)
                       return (
                         <div
                           key={cell.id}
                           className={[
                             'flex items-center gap-3 px-4 py-3 bg-white rounded-2xl border-2 shadow-sm transition-all',
-                            mine ? 'border-indigo-400' :
-                            isOpen ? 'border-purple-200' : 'border-gray-200',
+                            mine    ? 'border-indigo-400' :
+                            isExec  ? 'border-orange-300' :
+                            isOpen  ? 'border-purple-200' : 'border-gray-200',
                           ].join(' ')}
                         >
                           {/* 아이콘 */}
                           <div className={[
                             'flex-shrink-0 w-11 h-11 rounded-full flex items-center justify-center text-xl',
-                            mine ? 'bg-indigo-100' : isOpen ? 'bg-purple-100' : 'bg-gray-100',
+                            mine   ? 'bg-indigo-100' :
+                            isExec ? 'bg-orange-100' :
+                            isOpen ? 'bg-purple-100' : 'bg-gray-100',
                           ].join(' ')}>
-                            {isOpen ? '🌐' : '👥'}
+                            {isExec ? '🔑' : isOpen ? '🌐' : '👥'}
                           </div>
 
                           {/* 정보 */}
@@ -202,6 +213,11 @@ export default function CellPage() {
                                   내 순
                                 </span>
                               )}
+                              {isExec && (
+                                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-700 whitespace-nowrap">
+                                  임원 전용
+                                </span>
+                              )}
                               {isOpen && (
                                 <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700 whitespace-nowrap">
                                   전체 개방
@@ -209,13 +225,18 @@ export default function CellPage() {
                               )}
                             </div>
                             <div className="flex items-center gap-2 mt-0.5">
-                              {!isOpen && (
+                              {!isOpen && !isExec && (
                                 <span className="text-xs text-gray-400 whitespace-nowrap">
                                   순장 {cell.leaderName}
                                 </span>
                               )}
+                              {isExec && (
+                                <span className="text-xs text-gray-400 whitespace-nowrap">
+                                  청년회장·부회장·총무
+                                </span>
+                              )}
                               <span className="text-xs text-gray-400 whitespace-nowrap">
-                                {!isOpen && '· '}셀원 {cell.memberCount}명
+                                {(!isOpen && !isExec) && '· '}참여 {cell.memberCount}명
                               </span>
                             </div>
                           </div>
@@ -226,13 +247,19 @@ export default function CellPage() {
                               onClick={() => handleEnter(cell)}
                               className={[
                                 'flex-shrink-0 px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all min-h-[40px]',
-                                isOpen
+                                isExec
+                                  ? 'bg-orange-500 text-white hover:bg-orange-600 active:scale-95'
+                                  : isOpen
                                   ? 'bg-purple-600 text-white hover:bg-purple-700 active:scale-95'
                                   : 'bg-indigo-600 text-white hover:bg-indigo-700 active:scale-95',
                               ].join(' ')}
                             >
                               입장 →
                             </button>
+                          ) : isExec ? (
+                            <span className="flex-shrink-0 px-3 py-2 rounded-full text-xs font-semibold bg-gray-100 text-gray-400 whitespace-nowrap">
+                              비공개
+                            </span>
                           ) : applyDone === cell.id ? (
                             <span className="flex-shrink-0 px-3 py-2 rounded-full text-xs font-semibold bg-green-100 text-green-700 whitespace-nowrap">
                               신청됨 ✓

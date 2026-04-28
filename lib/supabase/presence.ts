@@ -29,45 +29,59 @@ export function useWorldPresence({
   avatarLevel: number
   onSync: (users: WorldPresenceUser[]) => void
 }) {
-  const channelRef = useRef<ReturnType<ReturnType<typeof createClient>['channel']> | null>(null)
-  const onSyncRef  = useRef(onSync)
-  onSyncRef.current = onSync
+  const channelRef   = useRef<ReturnType<ReturnType<typeof createClient>['channel']> | null>(null)
+  const onSyncRef    = useRef(onSync)
+  onSyncRef.current  = onSync
+
+  // 즉시 presenceState 읽어서 onSync 호출 (채널 ref 통해 어느 effect에서든 호출 가능)
+  const flushSync = useCallback(() => {
+    if (!channelRef.current) return
+    const state = channelRef.current.presenceState<WorldPresenceUser>()
+    onSyncRef.current(Object.values(state).flat())
+  }, [])
 
   // 채널 구독 — userId 확보 후 1회 실행
   useEffect(() => {
     if (!userId) return
     const supabase = createClient()
     const channel  = supabase.channel('world:global', {
-      config: { presence: { key: userId } },
+      config: {
+        broadcast: { self: false, ack: false },
+        presence:  { key: userId },
+      },
     })
     channelRef.current = channel
 
-    const handleSync = () => {
-      const state = channel.presenceState<WorldPresenceUser>()
-      onSyncRef.current(Object.values(state).flat())
-    }
-
     channel
-      .on('presence', { event: 'sync' },  handleSync)
-      .on('presence', { event: 'join' },  handleSync)
-      .on('presence', { event: 'leave' }, handleSync)
+      .on('presence', { event: 'sync' },  flushSync)
+      .on('presence', { event: 'join' },  flushSync)
+      .on('presence', { event: 'leave' }, flushSync)
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
           await channel.track({ userId, name, spaceSlug, avatarLevel })
+          // 초기 구독 직후 상태 즉시 반영
+          flushSync()
         }
       })
 
+    // 페이지 종료 시 presence 즉시 해제 (모바일 미정리 방지)
+    const handleUnload = () => { supabase.removeChannel(channel) }
+    window.addEventListener('beforeunload', handleUnload)
+
     return () => {
+      window.removeEventListener('beforeunload', handleUnload)
       supabase.removeChannel(channel)
       channelRef.current = null
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId])
 
-  // 공간·이름·레벨 변경 시 presence 재전송
+  // 공간·이름·레벨 변경 시 presence 재전송 + 즉시 카운트 갱신
   useEffect(() => {
-    if (!channelRef.current || !userId) return
+    if (!channelRef.current || !userId || !spaceSlug) return
     channelRef.current.track({ userId, name, spaceSlug, avatarLevel })
+      .then(() => flushSync())
+      .catch(() => {/* 구독 전 호출 시 무시 */})
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [spaceSlug, userId, name, avatarLevel])
 }
@@ -108,12 +122,23 @@ export function usePlazaPresence({
   onSync: (users: PresenceUser[]) => void
   onChat?: (msg: ChatMessage) => void
 }) {
-  const channelRef = useRef<ReturnType<ReturnType<typeof createClient>['channel']> | null>(null)
-  const meRef = useRef(me)
-  meRef.current = me
-
-  const onChatRef = useRef(onChat)
+  const channelRef  = useRef<ReturnType<ReturnType<typeof createClient>['channel']> | null>(null)
+  const meRef       = useRef(me)
+  meRef.current     = me
+  const onSyncRef   = useRef(onSync)
+  onSyncRef.current = onSync
+  const onChatRef   = useRef(onChat)
   onChatRef.current = onChat
+
+  // presenceState 즉시 읽어 onSync 호출 (자신 제외)
+  const flushSync = useCallback(() => {
+    if (!channelRef.current) return
+    const state = channelRef.current.presenceState<PresenceUser>() as PresenceState
+    const users = Object.values(state)
+      .flat()
+      .filter((u) => u.userId !== meRef.current.userId)
+    onSyncRef.current(users)
+  }, [])
 
   const trackPosition = useCallback(async (
     x: number,
@@ -123,7 +148,9 @@ export function usePlazaPresence({
   ) => {
     if (!channelRef.current) return
     await channelRef.current.track({ ...meRef.current, x, y, benchId, seatIndex })
-  }, [])
+    // 자신의 이동 후에도 타인의 최신 상태를 즉시 반영
+    flushSync()
+  }, [flushSync])
 
   const sendChat = useCallback(async (content: string): Promise<ChatMessage | null> => {
     if (!channelRef.current) return null
@@ -147,37 +174,38 @@ export function usePlazaPresence({
   useEffect(() => {
     const supabase = createClient()
     const channel = supabase.channel(`plaza:${spaceId}`, {
-      config: { presence: { key: me.userId } },
+      config: {
+        broadcast: { self: false, ack: false },
+        presence:  { key: me.userId },
+      },
     })
     channelRef.current = channel
 
-    const handleSync = () => {
-      const state = channel.presenceState<PresenceUser>() as PresenceState
-      const users = Object.values(state)
-        .flat()
-        .filter((u) => u.userId !== me.userId)
-      onSync(users)
-    }
-
     channel
-      .on('presence', { event: 'sync' }, handleSync)
-      .on('presence', { event: 'join' }, handleSync)
-      .on('presence', { event: 'leave' }, handleSync)
+      .on('presence', { event: 'sync' },  flushSync)
+      .on('presence', { event: 'join' },  flushSync)
+      .on('presence', { event: 'leave' }, flushSync)
       .on('broadcast', { event: 'chat' }, ({ payload }) => {
         onChatRef.current?.(payload as ChatMessage)
       })
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
           await channel.track({ ...meRef.current })
+          flushSync()
         }
       })
 
+    // 페이지 종료 시 presence 즉시 해제
+    const handleUnload = () => { supabase.removeChannel(channel) }
+    window.addEventListener('beforeunload', handleUnload)
+
     return () => {
+      window.removeEventListener('beforeunload', handleUnload)
       supabase.removeChannel(channel)
       channelRef.current = null
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [spaceId, me.userId])
 
-  return { trackPosition, sendChat }
+  return { trackPosition, sendChat, flushSync }
 }
