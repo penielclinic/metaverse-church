@@ -111,6 +111,7 @@ export async function POST(req: Request) {
         .eq('user_id', user.id)
       if (error) return NextResponse.json({ error: '업데이트 실패' }, { status: 500 })
       // 악세서리 저장 — 컬럼 미존재 시 조용히 무시 (migration 032 실행 전까지)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (supabase.from('avatars') as any)
         .update({ ...accessoryFields, updated_at: new Date().toISOString() })
         .eq('user_id', user.id)
@@ -123,6 +124,7 @@ export async function POST(req: Request) {
         .insert({ user_id: user.id, skin_tone, gender, hair_style, outfit } as any)
       if (error) return NextResponse.json({ error: '생성 실패' }, { status: 500 })
       // 악세서리 저장 — 컬럼 미존재 시 조용히 무시
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (supabase.from('avatars') as any)
         .update({ ...accessoryFields })
         .eq('user_id', user.id)
