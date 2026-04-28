@@ -46,19 +46,21 @@ export default function MembersPage() {
   const [editing, setEditing] = useState<{ id: string; role: string; cellId: number | null } | null>(null)
   const [cells, setCells] = useState<{ id: number; name: string }[]>([])
   const [saving, setSaving] = useState(false)
+  const [initialized, setInitialized] = useState(false)
 
   useEffect(() => {
     async function init() {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+      if (!user) { setLoading(false); return }
       const { data: profile } = await supabase
         .from('profiles').select('role, mission_id, cell_id').eq('id', user.id).single()
-      setMyRole(profile?.role ?? '')
+      setMyRole(profile?.role ?? 'member')
       setMyMissionId(profile?.mission_id ?? null)
       setMyCellId(profile?.cell_id ?? null)
 
       const { data: allCells } = await supabase.from('cells').select('id, name').order('id')
       setCells(allCells ?? [])
+      setInitialized(true)
     }
     init()
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -102,8 +104,8 @@ export default function MembersPage() {
   }, [myRole, myMissionId, myCellId, search, supabase])
 
   useEffect(() => {
-    if (myRole) load()
-  }, [myRole, load])
+    if (initialized) load()
+  }, [initialized, load])
 
   const saveEdit = async () => {
     if (!editing) return
