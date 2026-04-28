@@ -14,6 +14,10 @@ interface AvatarState {
   gender: Gender
   hairStyle: string
   outfit: string
+  eyeMakeup: string
+  glasses: string
+  earring: string
+  necklace: string
   badge: string | null
   glowColor: GlowColor
   currentSpaceSlug: string | null
@@ -34,6 +38,10 @@ export const useAvatarStore = create<AvatarState>((set) => ({
   gender: 'male',
   hairStyle: 'short',
   outfit: 'casual',
+  eyeMakeup: 'none',
+  glasses: 'none',
+  earring: 'none',
+  necklace: 'none',
   badge: null,
   glowColor: 'none',
   currentSpaceSlug: null,

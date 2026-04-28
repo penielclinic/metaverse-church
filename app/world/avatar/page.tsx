@@ -138,7 +138,8 @@ export default function AvatarPage() {
         setError(d.error ?? '저장 실패')
         return
       }
-      setAvatar({ name: nameInput.trim(), titles, skinTone, gender, hairStyle: previewHair, outfit })
+      setAvatar({ name: nameInput.trim(), titles, skinTone, gender, hairStyle: previewHair, outfit,
+                  eyeMakeup, glasses, earring, necklace })
       router.push('/world')
     } catch {
       setError('네트워크 오류가 발생했습니다.')
