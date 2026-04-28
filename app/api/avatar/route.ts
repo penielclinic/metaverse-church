@@ -23,14 +23,14 @@ export async function GET() {
     // 프로필(이름, 직분)도 함께 반환
     const { data: profile } = await supabase
       .from('profiles')
-      .select('name, titles')
+      .select('name, titles, cell_id')
       .eq('id', user.id)
       .single()
 
-    const profileData = profile as { name?: string; titles?: string[] } | null
+    const profileData = profile as { name?: string; titles?: string[]; cell_id?: number } | null
     return NextResponse.json({
       userId: user.id,
-      avatar: avatar ?? null,
+      avatar: { ...(avatar ?? {}), cell_id: profileData?.cell_id ?? null },
       name: profileData?.name ?? null,
       titles: profileData?.titles ?? [],
       level:     (avatar as Record<string, unknown> | null)?.level      ?? 1,

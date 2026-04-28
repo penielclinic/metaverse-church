@@ -1,11 +1,35 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import ChallengeCard, { type ChallengeCardProps } from '@/components/challenge/ChallengeCard'
 import BadgeDisplay, { type Badge } from '@/components/challenge/BadgeDisplay'
 import StreakCounter from '@/components/challenge/StreakCounter'
 import Leaderboard, { type LeaderboardEntry } from '@/components/challenge/Leaderboard'
 import { useAvatarStore } from '@/store/avatarStore'
+
+// 2026-04-07(월)을 시즌 시작으로 현재 주차 계산
+function getWeekInfo() {
+  const SEASON_START = new Date('2026-04-07T00:00:00+09:00')
+  const now = new Date()
+  const diffMs   = now.getTime() - SEASON_START.getTime()
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+  const weekIdx  = Math.max(0, Math.floor(diffDays / 7)) // 0-based
+  const weekNum  = weekIdx + 1
+
+  const monDate  = new Date(SEASON_START)
+  monDate.setDate(monDate.getDate() + weekIdx * 7)
+  const sunDate  = new Date(monDate)
+  sunDate.setDate(sunDate.getDate() + 6)
+
+  const fmt = (d: Date) =>
+    `${d.getMonth() + 1}월 ${d.getDate()}일`
+  const DAY = ['일', '월', '화', '수', '목', '금', '토']
+
+  return {
+    weekNum,
+    label: `2026년 ${weekNum}주차 · ${fmt(monDate)}(${DAY[monDate.getDay()]}) — ${fmt(sunDate)}(${DAY[sunDate.getDay()]})`,
+  }
+}
 
 // ─── 샘플 데이터 (Supabase 연동 전) ───────────────────────────────────────────
 
@@ -69,14 +93,6 @@ const INITIAL_BADGES: Badge[] = [
   { slug: 'devoted',         label: '충성된자',   emoji: '💎', description: '한 달 개근',                earned: false, earnedAt: null },
 ]
 
-const LEADERBOARD: LeaderboardEntry[] = [
-  { rank: 1, cellName: '1순', exp: 850, memberCount: 8, isMyCell: false },
-  { rank: 2, cellName: '2순', exp: 720, memberCount: 7, isMyCell: false },
-  { rank: 3, cellName: '3순', exp: 680, memberCount: 9, isMyCell: true  },
-  { rank: 4, cellName: '4순', exp: 510, memberCount: 6, isMyCell: false },
-  { rank: 5, cellName: '5순', exp: 430, memberCount: 8, isMyCell: false },
-]
-
 // ─── 메인 페이지 ──────────────────────────────────────────────────────────────
 
 export default function ChallengePage() {
@@ -87,6 +103,29 @@ export default function ChallengePage() {
   const [checkedInToday, setCheckedInToday] = useState(true)
   const [checkInLoading, setCheckInLoading] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
+  const weekInfo = getWeekInfo()
+
+  useEffect(() => {
+    // 내 cell_id 조회 후 랭킹 로드
+    Promise.all([
+      fetch('/api/challenge/leaderboard').then((r) => r.ok ? r.json() : null),
+      fetch('/api/avatar').then((r) => r.ok ? r.json() : null),
+    ]).then(([board, me]) => {
+      if (!board?.entries) return
+      const myCellId = me?.avatar?.cell_id ?? null
+      const entries: LeaderboardEntry[] = board.entries.map(
+        (e: { rank: number; cellName: string; exp: number; memberCount: number; cellId: number }) => ({
+          rank: e.rank,
+          cellName: e.cellName,
+          exp: e.exp,
+          memberCount: e.memberCount,
+          isMyCell: myCellId !== null && e.cellId === myCellId,
+        })
+      )
+      setLeaderboard(entries)
+    }).catch(() => {})
+  }, [])
 
   const showToast = (msg: string) => {
     setToast(msg)
@@ -181,7 +220,7 @@ export default function ChallengePage() {
             말씀 암송·QT·기도 챌린지를 완료하고 경험치와 뱃지를 획득하세요
           </p>
           <p className="mt-1 text-xs text-gray-400">
-            2026년 14주차 · 4월 7일(월) — 4월 13일(일)
+            {weekInfo.label}
           </p>
         </div>
 
@@ -242,7 +281,15 @@ export default function ChallengePage() {
 
         {/* 순 랭킹 보드 */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
-          <Leaderboard entries={LEADERBOARD} />
+          {leaderboard.length > 0 ? (
+            <Leaderboard entries={leaderboard} />
+          ) : (
+            <div className="text-center py-6 text-sm text-gray-400">
+              <p className="text-2xl mb-2">🏆</p>
+              <p style={{ wordBreak: 'keep-all' }}>아직 승인된 순원이 없습니다.</p>
+              <p style={{ wordBreak: 'keep-all' }}>순 배치 신청 후 활동을 시작해보세요!</p>
+            </div>
+          )}
         </div>
 
         {/* 뱃지 컬렉션 */}
