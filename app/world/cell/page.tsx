@@ -163,6 +163,7 @@ export default function CellPage() {
           const GROUP_EMOJI: Record<string, string> = {
             '청년회': '🙌',
             '교회학교': '📚',
+            '찬양팀': '🎵',
             '기타': '👥',
           }
           return (

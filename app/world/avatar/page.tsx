@@ -17,6 +17,11 @@ const SKIN_OPTIONS: { value: SkinTone; label: string; color: string }[] = [
 
 const OUTFIT_OPTIONS: { value: Outfit; label: string; emoji: string }[] = [
   { value: 'casual',       label: '캐주얼',    emoji: '👕' },
+  { value: 'hoodie',       label: '후드티',    emoji: '🧥' },
+  { value: 'shirt',        label: '셔츠',      emoji: '🔵' },
+  { value: 'blouse',       label: '블라우스',  emoji: '🌸' },
+  { value: 'sweater',      label: '스웨터',    emoji: '🧶' },
+  { value: 'vest',         label: '조끼',      emoji: '🦺' },
   { value: 'formal',       label: '정장',      emoji: '👔' },
   { value: 'hanbok',       label: '한복',      emoji: '🎎' },
   { value: 'worship_team', label: '찬양팀',    emoji: '🎵' },

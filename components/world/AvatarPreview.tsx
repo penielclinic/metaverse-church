@@ -5,8 +5,10 @@ const SKIN: Record<string, string> = {
 }
 
 export type SkinTone = 'light' | 'medium' | 'tan' | 'dark'
-export type Gender  = 'male' | 'female'
-export type Outfit  = 'casual' | 'formal' | 'hanbok' | 'worship_team' | 'pastor'
+export type Gender   = 'male' | 'female'
+export type Outfit   =
+  | 'casual' | 'formal' | 'hanbok' | 'worship_team' | 'pastor'
+  | 'hoodie' | 'shirt' | 'blouse' | 'sweater' | 'vest'
 
 export const MALE_HAIR_OPTIONS = [
   { value: 'short',     label: '단발',    emoji: '💇‍♂️' },
@@ -19,34 +21,34 @@ export const MALE_HAIR_OPTIONS = [
   { value: 'medium',    label: '중단발',  emoji: '🧑' },
   { value: 'center',    label: '센터파트', emoji: '🎭' },
   { value: 'topknot',   label: '상투',    emoji: '🎎' },
+  { value: 'longhair',  label: '긴머리',  emoji: '🧑‍🦱' },
   { value: 'bald',      label: '민머리',  emoji: '🧑‍🦲' },
 ]
 
 export const FEMALE_HAIR_OPTIONS = [
-  { value: 'bob',       label: '단발',    emoji: '💇‍♀️' },
-  { value: 'long',      label: '장발',    emoji: '👩' },
-  { value: 'wave',      label: '웨이브',  emoji: '〰️' },
-  { value: 'ponytail',  label: '포니테일', emoji: '🎀' },
-  { value: 'bun',       label: '업스타일', emoji: '🪮' },
-  { value: 'straight',  label: '생머리',  emoji: '💁‍♀️' },
-  { value: 'twin',      label: '양갈래',  emoji: '🎎' },
-  { value: 'half_up',   label: '반묶음',  emoji: '🌸' },
-  { value: 'pixie',     label: '픽시컷',  emoji: '✨' },
-  { value: 'braid',     label: '땋은머리', emoji: '🌿' },
+  { value: 'bob',      label: '단발',    emoji: '💇‍♀️' },
+  { value: 'long',     label: '장발',    emoji: '👩' },
+  { value: 'wave',     label: '웨이브',  emoji: '〰️' },
+  { value: 'ponytail', label: '포니테일', emoji: '🎀' },
+  { value: 'bun',      label: '똥머리',  emoji: '🪮' },
+  { value: 'straight', label: '칼단발',  emoji: '💁‍♀️' },
+  { value: 'twin',     label: '양갈래',  emoji: '🎎' },
+  { value: 'half_up',  label: '반묶음',  emoji: '🌸' },
+  { value: 'braid',    label: '땋은머리', emoji: '🌿' },
 ]
 
 // 머리 색상 팔레트 — hairStyle에 "+colorName" 추가로 적용 (예: "bob+bangs+blonde")
 export const HAIR_COLOR_OPTIONS = [
-  { value: 'black',    label: '블랙',   hex: '#18100a' },
-  { value: 'brown',    label: '브라운', hex: '#3b2a1a' },
-  { value: 'chestnut', label: '밤색',   hex: '#7b4e32' },
-  { value: 'blonde',   label: '금발',   hex: '#c9a227' },
+  { value: 'black',    label: '블랙',    hex: '#18100a' },
+  { value: 'brown',    label: '브라운',  hex: '#3b2a1a' },
+  { value: 'chestnut', label: '밤색',    hex: '#7b4e32' },
+  { value: 'blonde',   label: '금발',    hex: '#c9a227' },
   { value: 'platinum', label: '플래티넘', hex: '#e0c98a' },
-  { value: 'auburn',   label: '오번',   hex: '#8b3a2a' },
-  { value: 'gray',     label: '회색',   hex: '#8d949e' },
-  { value: 'pink',     label: '핑크',   hex: '#e879a8' },
-  { value: 'purple',   label: '보라',   hex: '#9333ea' },
-  { value: 'blue',     label: '파랑',   hex: '#3b82f6' },
+  { value: 'auburn',   label: '오번',    hex: '#8b3a2a' },
+  { value: 'gray',     label: '회색',    hex: '#8d949e' },
+  { value: 'pink',     label: '핑크',    hex: '#e879a8' },
+  { value: 'purple',   label: '보라',    hex: '#9333ea' },
+  { value: 'blue',     label: '파랑',    hex: '#3b82f6' },
 ]
 
 const HAIR_COLOR_MAP: Record<string, string> = Object.fromEntries(
@@ -80,16 +82,13 @@ function MaleHair({ style, c }: { style: string; c: string }) {
       </>
     case 'twoblock':
       return <>
-        {/* 긴 윗머리 */}
         <ellipse cx="50" cy="25" rx="21" ry="15" fill={c} />
-        {/* 짧은 옆머리 */}
         <rect x="29" y="30" width="7" height="10" rx="3" fill={c} opacity="0.55" />
         <rect x="64" y="30" width="7" height="10" rx="3" fill={c} opacity="0.55" />
       </>
     case 'fade':
       return <>
         <ellipse cx="50" cy="27" rx="21" ry="13" fill={c} />
-        {/* 옆면 페이드 */}
         <rect x="29" y="29" width="7" height="8"  rx="3" fill={c} opacity="0.5" />
         <rect x="64" y="29" width="7" height="8"  rx="3" fill={c} opacity="0.5" />
         <rect x="29" y="37" width="7" height="5"  rx="3" fill={c} opacity="0.22" />
@@ -106,19 +105,25 @@ function MaleHair({ style, c }: { style: string; c: string }) {
         <ellipse cx="50" cy="27" rx="21" ry="13" fill={c} />
         <rect x="29" y="30" width="8" height="16" rx="5" fill={c} />
         <rect x="63" y="30" width="8" height="16" rx="5" fill={c} />
-        {/* 센터 가르마 */}
         <line x1="50" y1="18" x2="50" y2="33" stroke="#6b5543" strokeWidth="2" />
-        {/* 양쪽 커튼 */}
         <path d="M39 28 Q33 34 33 40" stroke={c} strokeWidth="5" fill="none" strokeLinecap="round" />
         <path d="M61 28 Q67 34 67 40" stroke={c} strokeWidth="5" fill="none" strokeLinecap="round" />
       </>
     case 'topknot':
       return <>
         <ellipse cx="50" cy="30" rx="20" ry="9" fill={c} />
-        {/* 상단 상투 */}
         <ellipse cx="50" cy="18" rx="9" ry="7" fill={c} />
-        {/* 묶음 띠 */}
         <rect x="45" y="24" width="10" height="4" rx="2" fill="#6b5543" />
+      </>
+    case 'longhair':
+      // 턱까지 내려오는 긴머리
+      return <>
+        <ellipse cx="50" cy="25" rx="21" ry="14" fill={c} />
+        {/* 양쪽 옆머리 — 턱(y≈62)까지 */}
+        <rect x="29" y="31" width="8" height="30" rx="4" fill={c} />
+        <rect x="63" y="31" width="8" height="30" rx="4" fill={c} />
+        {/* 뒷머리 */}
+        <rect x="37" y="27" width="26" height="5" rx="3" fill={c} opacity="0.85" />
       </>
     case 'bald':
       return null
@@ -155,18 +160,19 @@ function FemaleHair({ style, c }: { style: string; c: string }) {
         <ellipse cx="68" cy="48" rx="7" ry="10" fill={c} />
       </>
     case 'bun':
+      // 똥머리
       return <>
         <ellipse cx="50" cy="28" rx="21" ry="15" fill={c} />
         <ellipse cx="50" cy="13" rx="10" ry="8" fill={c} />
         <circle  cx="50" cy="13" r="5"          fill={c} opacity="0.6" />
       </>
     case 'straight':
-      // 생머리 — 어깨 길이 직선 컷
+      // 칼단발 — 어깨 길이 일자 컷
       return <>
         <ellipse cx="50" cy="25" rx="22" ry="16" fill={c} />
         <rect x="28" y="33" width="9" height="30" rx="3" fill={c} />
         <rect x="63" y="33" width="9" height="30" rx="3" fill={c} />
-        {/* 일자 컷 바닥선 */}
+        {/* 일자 바닥선 */}
         <rect x="28" y="61" width="9" height="3" rx="1" fill={c} />
         <rect x="63" y="61" width="9" height="3" rx="1" fill={c} />
       </>
@@ -174,11 +180,8 @@ function FemaleHair({ style, c }: { style: string; c: string }) {
       // 양갈래 트윈테일
       return <>
         <ellipse cx="50" cy="26" rx="22" ry="16" fill={c} />
-        {/* 왼쪽 꼬리 */}
         <path d="M30 26 Q19 38 21 58 Q23 68 26 76" stroke={c} strokeWidth="11" fill="none" strokeLinecap="round" />
-        {/* 오른쪽 꼬리 */}
         <path d="M70 26 Q81 38 79 58 Q77 68 74 76" stroke={c} strokeWidth="11" fill="none" strokeLinecap="round" />
-        {/* 리본/묶음 */}
         <circle cx="24" cy="31" r="4" fill="#ec4899" />
         <circle cx="76" cy="31" r="4" fill="#ec4899" />
       </>
@@ -186,36 +189,27 @@ function FemaleHair({ style, c }: { style: string; c: string }) {
       // 반묶음
       return <>
         <ellipse cx="50" cy="25" rx="22" ry="16" fill={c} />
-        {/* 아래 풀어진 머리 */}
         <rect x="28" y="35" width="9" height="36" rx="5" fill={c} />
         <rect x="63" y="35" width="9" height="36" rx="5" fill={c} />
-        {/* 위쪽 묶음 */}
         <ellipse cx="50" cy="17" rx="13" ry="7" fill={c} />
-        <ellipse cx="50" cy="15" rx="6" ry="5" fill={c} />
-        {/* 헤어 핀 */}
-        <circle cx="50" cy="14" r="3" fill="#f9a8d4" />
-      </>
-    case 'pixie':
-      // 픽시컷
-      return <>
-        <ellipse cx="50" cy="29" rx="21" ry="11" fill={c} />
-        <ellipse cx="32" cy="34" rx="6" ry="5"   fill={c} />
-        <ellipse cx="68" cy="34" rx="6" ry="5"   fill={c} />
-        <rect x="34" y="28" width="32" height="7" rx="3" fill={c} />
+        <ellipse cx="50" cy="15" rx="6"  ry="5" fill={c} />
+        <circle  cx="50" cy="14" r="3"          fill="#f9a8d4" />
       </>
     case 'braid':
-      // 땋은머리
+      // 땋은머리 — 왼쪽 어깨 옆으로 내려옴
       return <>
         <ellipse cx="50" cy="25" rx="22" ry="16" fill={c} />
-        {/* 땋은 머리카락 줄기 */}
-        <path d="M50 40 L50 85" stroke={c} strokeWidth="10" fill="none" strokeLinecap="round" />
-        {/* 땋은 패턴 */}
-        <path d="M46 42 Q54 48 46 54 Q54 60 46 66 Q54 72 46 78 Q54 82 50 85"
-              stroke="#6b5543" strokeWidth="1.8" fill="none" />
-        <path d="M54 42 Q46 48 54 54 Q46 60 54 66 Q46 72 54 78 Q46 82 50 85"
-              stroke="#6b5543" strokeWidth="1.8" fill="none" />
-        {/* 끝 묶음 */}
-        <circle cx="50" cy="85" r="3" fill="#f9a8d4" />
+        {/* 왼쪽 옆머리 (땋기 연결) */}
+        <rect x="28" y="33" width="9" height="30" rx="5" fill={c} />
+        {/* 오른쪽 짧은 커튼 */}
+        <rect x="63" y="33" width="9" height="14" rx="5" fill={c} />
+        {/* 땋은 줄기 — 왼쪽 어깨 방향 */}
+        <path d="M30 62 Q18 70 20 84" stroke={c} strokeWidth="9" fill="none" strokeLinecap="round" />
+        {/* 땋음 패턴 */}
+        <path d="M26 64 Q33 70 26 76 Q33 82 27 86" stroke="#6b5543" strokeWidth="1.5" fill="none" opacity="0.6" />
+        <path d="M33 64 Q26 70 33 76 Q26 82 32 86" stroke="#6b5543" strokeWidth="1.5" fill="none" opacity="0.6" />
+        {/* 끝 리본 */}
+        <circle cx="20" cy="85" r="3" fill="#f9a8d4" />
       </>
     default:
       return <ellipse cx="50" cy="26" rx="22" ry="16" fill={c} />
@@ -225,18 +219,18 @@ function FemaleHair({ style, c }: { style: string; c: string }) {
 /* ── 앞머리 오버레이 (얼굴 위에 렌더) ── */
 function BangsOverlay({ gender, c }: { gender: Gender; c: string }) {
   if (gender === 'female') {
-    // 여성 앞머리 — 이마를 덮는 자연스러운 뱅
+    // 여성 앞머리 — 이마 상단부터 눈썹 위까지
     return (
       <path
-        d="M30 25 L70 25 Q70 37 50 36 Q30 37 30 25 Z"
+        d="M30 19 L70 19 Q70 33 50 32 Q30 33 30 19 Z"
         fill={c}
       />
     )
   }
-  // 남성 앞머리 — 짧고 가로 직선 뱅
+  // 남성 앞머리 — 이마 상단부터
   return (
     <path
-      d="M32 27 L68 27 Q68 36 50 35 Q32 36 32 27 Z"
+      d="M32 21 L68 21 Q68 33 50 32 Q32 33 32 21 Z"
       fill={c}
     />
   )
@@ -273,7 +267,77 @@ function Body({ outfit, gender }: { outfit: Outfit; gender: Gender }) {
     </>
   }
 
-  const OUTFIT_CFG: Record<Outfit, { body: string; collar: string }> = {
+  if (outfit === 'hoodie') {
+    return <>
+      <ellipse cx="50" cy="83" rx="28" ry="17" fill="#4b5563" />
+      {/* 라운드 넥 */}
+      <path d="M40 64 Q50 70 60 64" stroke="#374151" strokeWidth="3.5" fill="none" strokeLinecap="round" />
+      {/* 캥거루 주머니 */}
+      <rect x="36" y="77" width="28" height="10" rx="4" fill="#374151" opacity="0.45" />
+      {/* 드로스트링 */}
+      <line x1="46" y1="65" x2="44" y2="77" stroke="#6b7280" strokeWidth="1.5" strokeLinecap="round" />
+      <line x1="54" y1="65" x2="56" y2="77" stroke="#6b7280" strokeWidth="1.5" strokeLinecap="round" />
+    </>
+  }
+
+  if (outfit === 'shirt') {
+    return <>
+      <ellipse cx="50" cy="83" rx="28" ry="17" fill="#bfdbfe" />
+      {/* 카라 (양쪽 칼라 포인트) */}
+      <path d="M44 65 L50 72 L56 65 L52 62 L50 66 L48 62 Z" fill="#f0f9ff" />
+      {/* 단추 줄 */}
+      <line x1="50" y1="68" x2="50" y2="95" stroke="#93c5fd" strokeWidth="1" />
+      <circle cx="50" cy="72" r="1.5" fill="#60a5fa" />
+      <circle cx="50" cy="79" r="1.5" fill="#60a5fa" />
+      <circle cx="50" cy="86" r="1.5" fill="#60a5fa" />
+    </>
+  }
+
+  if (outfit === 'blouse') {
+    return <>
+      <ellipse cx="50" cy="83" rx="28" ry="17" fill="#fce7f3" />
+      {/* 피터팬 칼라 */}
+      <ellipse cx="50" cy="66" rx="14" ry="6" fill="#f9a8d4" opacity="0.75" />
+      <ellipse cx="50" cy="66" rx="9"  ry="4" fill="#fce7f3" />
+      {/* 리본 */}
+      <path d="M46 66 L44 63 L50 66 L56 63 L54 66" fill="#f9a8d4" />
+      <circle cx="50" cy="66" r="2.2" fill="#ec4899" opacity="0.8" />
+      {/* 퍼프 소매 느낌 */}
+      <ellipse cx="24" cy="73" rx="7" ry="5" fill="#fce7f3" />
+      <ellipse cx="76" cy="73" rx="7" ry="5" fill="#fce7f3" />
+    </>
+  }
+
+  if (outfit === 'sweater') {
+    return <>
+      <ellipse cx="50" cy="83" rx="28" ry="17" fill="#7c2d12" />
+      {/* 라운드 넥 립 */}
+      <path d="M38 63 Q50 70 62 63" stroke="#9a3412" strokeWidth="4" fill="none" strokeLinecap="round" />
+      <path d="M38 63 Q50 70 62 63" stroke="#fca5a5" strokeWidth="1.2" fill="none" strokeLinecap="round" opacity="0.5" />
+      {/* 소매 립 */}
+      <line x1="20" y1="80" x2="24" y2="80" stroke="#9a3412" strokeWidth="2.5" strokeLinecap="round" />
+      <line x1="76" y1="80" x2="80" y2="80" stroke="#9a3412" strokeWidth="2.5" strokeLinecap="round" />
+    </>
+  }
+
+  if (outfit === 'vest') {
+    return <>
+      {/* 안에 입은 셔츠 */}
+      <ellipse cx="50" cy="83" rx="28" ry="17" fill="#f1f5f9" />
+      {/* 조끼 왼쪽 */}
+      <path d="M22 68 Q34 63 44 65 L44 100 H22 Z" fill="#1e3a5f" />
+      {/* 조끼 오른쪽 */}
+      <path d="M78 68 Q66 63 56 65 L56 100 H78 Z" fill="#1e3a5f" />
+      {/* 셔츠 칼라 */}
+      <path d="M44 65 L50 72 L56 65" stroke="#94a3b8" strokeWidth="2" fill="none" strokeLinecap="round" />
+      {/* 조끼 단추 */}
+      <circle cx="50" cy="73" r="2" fill="#1e3a5f" />
+      <circle cx="50" cy="81" r="2" fill="#1e3a5f" />
+      <circle cx="50" cy="89" r="2" fill="#1e3a5f" />
+    </>
+  }
+
+  const OUTFIT_CFG: Record<string, { body: string; collar: string }> = {
     casual:       { body: '#6366f1', collar: '#e0e7ff' },
     formal:       { body: '#1e293b', collar: '#f8fafc' },
     worship_team: { body: '#7c3aed', collar: '#ddd6fe' },
@@ -293,17 +357,17 @@ function Body({ outfit, gender }: { outfit: Outfit; gender: Gender }) {
 
 interface Props {
   skinTone: SkinTone
-  gender: Gender
-  hairStyle: string   // "base" 또는 "base+bangs" 형식
-  outfit: Outfit
-  size?: number
+  gender:   Gender
+  hairStyle: string   // "base" 또는 "base+bangs+color" 형식
+  outfit:   Outfit
+  size?:    number
   faceOnly?: boolean
 }
 
 export default function AvatarPreview({
   skinTone, gender, hairStyle, outfit, size = 120, faceOnly = false,
 }: Props) {
-  const skin = SKIN[skinTone] ?? SKIN.medium
+  const skin    = SKIN[skinTone] ?? SKIN.medium
   const viewBox = faceOnly ? '20 8 60 60' : '0 0 100 100'
 
   // "bob+bangs+blonde" → baseStyle="bob", hasBangs=true, hairColor="#c9a227"
