@@ -42,16 +42,32 @@ export const useAvatarStore = create<AvatarState>((set) => ({
 
   setCurrentSpace: (slug) => set({ currentSpaceSlug: slug }),
 
-  addExp: (amount) =>
+  addExp: (amount) => {
+    // 낙관적 업데이트 (즉시 UI 반영)
     set((state) => {
-      const newExp = state.exp + amount
-      if (newExp >= state.expToNext) {
-        return {
-          exp: newExp - state.expToNext,
-          level: state.level + 1,
-          expToNext: Math.floor(state.expToNext * 1.5),
-        }
+      let newExp    = state.exp + amount
+      let newLevel  = state.level
+      let newToNext = state.expToNext
+      while (newExp >= newToNext) {
+        newExp    -= newToNext
+        newLevel  += 1
+        newToNext  = Math.floor(newToNext * 1.5)
       }
-      return { exp: newExp }
-    }),
+      return { exp: newExp, level: newLevel, expToNext: newToNext }
+    })
+    // DB 저장 (비동기, 실패 시 조용히 무시)
+    fetch('/api/avatar/exp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amount }),
+    })
+      .then((res) => res.ok ? res.json() : null)
+      .then((data) => {
+        if (data) {
+          // DB 값으로 최종 동기화
+          set({ level: data.level, exp: data.exp, expToNext: data.expToNext })
+        }
+      })
+      .catch(() => {/* 네트워크 오류 무시 */})
+  },
 }))

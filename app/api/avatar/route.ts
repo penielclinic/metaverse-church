@@ -33,6 +33,9 @@ export async function GET() {
       avatar: avatar ?? null,
       name: profileData?.name ?? null,
       titles: profileData?.titles ?? [],
+      level:     (avatar as Record<string, unknown> | null)?.level      ?? 1,
+      exp:       (avatar as Record<string, unknown> | null)?.exp        ?? 0,
+      expToNext: (avatar as Record<string, unknown> | null)?.exp_to_next ?? 100,
     })
   } catch (err) {
     console.error('[avatar GET]', err)

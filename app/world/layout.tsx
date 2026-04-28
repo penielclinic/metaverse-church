@@ -36,6 +36,9 @@ export default function WorldLayout({
             gender:    a.gender       ?? 'male',
             hairStyle: a.hair_style   ?? undefined,
             outfit:    a.outfit       ?? undefined,
+            level:     data.level     ?? 1,
+            exp:       data.exp       ?? 0,
+            expToNext: data.expToNext ?? 100,
           })
         }
       })
