@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useAvatarStore } from '@/store/avatarStore'
 import AvatarPreview, {
   MALE_HAIR_OPTIONS, FEMALE_HAIR_OPTIONS, HAIR_COLOR_OPTIONS,
+  EYE_MAKEUP_OPTIONS, GLASSES_OPTIONS, EARRING_OPTIONS, NECKLACE_OPTIONS,
   type SkinTone, type Gender, type Outfit,
 } from '@/components/world/AvatarPreview'
 
@@ -63,6 +64,10 @@ export default function AvatarPage() {
   const [hasBangs,   setHasBangs]   = useState(false)
   const [hairColor,  setHairColor]  = useState('brown')
   const [outfit,     setOutfit]     = useState<Outfit>('casual')
+  const [eyeMakeup,  setEyeMakeup]  = useState('none')
+  const [glasses,    setGlasses]    = useState('none')
+  const [earring,    setEarring]    = useState('none')
+  const [necklace,   setNecklace]   = useState('none')
   const [saving,     setSaving]     = useState(false)
   const [error,      setError]      = useState<string | null>(null)
 
@@ -89,7 +94,11 @@ export default function AvatarPage() {
         setHasBangs(parsed.hasBangs)
         setHairColor(parsed.colorName)
       }
-      if (a.outfit) setOutfit(a.outfit)
+      if (a.outfit)      setOutfit(a.outfit)
+      if (a.eye_makeup)  setEyeMakeup(a.eye_makeup)
+      if (a.glasses)     setGlasses(a.glasses)
+      if (a.earring)     setEarring(a.earring)
+      if (a.necklace)    setNecklace(a.necklace)
     })
   }, [isNew])
 
@@ -117,6 +126,10 @@ export default function AvatarPage() {
           skin_tone: skinTone, gender,
           hair_style: previewHair,
           outfit,
+          eye_makeup: eyeMakeup,
+          glasses,
+          earring,
+          necklace,
           name: nameInput.trim(), titles,
         }),
       })
@@ -151,6 +164,8 @@ export default function AvatarPage() {
             <AvatarPreview
               skinTone={skinTone} gender={gender}
               hairStyle={previewHair} outfit={outfit}
+              eyeMakeup={eyeMakeup} glasses={glasses}
+              earring={earring} necklace={necklace}
               size={110}
             />
           </div>
@@ -332,6 +347,96 @@ export default function AvatarPage() {
               ))}
             </div>
           </section>
+
+          {/* 안경 */}
+          <section>
+            <h2 className="text-sm font-semibold text-gray-600 mb-2">안경 / 선글라스</h2>
+            <div className="grid grid-cols-3 gap-2">
+              {GLASSES_OPTIONS.map(opt => (
+                <button
+                  key={opt.value}
+                  onClick={() => setGlasses(opt.value)}
+                  className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border-2 transition-all text-sm ${
+                    glasses === opt.value
+                      ? 'border-indigo-500 bg-indigo-50 font-semibold shadow-sm'
+                      : 'border-gray-200 bg-white text-gray-600'
+                  }`}
+                >
+                  <span>{opt.emoji}</span>
+                  <span className="whitespace-nowrap">{opt.label}</span>
+                </button>
+              ))}
+            </div>
+          </section>
+
+          {/* 눈화장 (여성 전용) */}
+          {gender === 'female' && (
+            <section>
+              <h2 className="text-sm font-semibold text-gray-600 mb-2">눈화장</h2>
+              <div className="grid grid-cols-3 gap-2">
+                {EYE_MAKEUP_OPTIONS.map(opt => (
+                  <button
+                    key={opt.value}
+                    onClick={() => setEyeMakeup(opt.value)}
+                    className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border-2 transition-all text-sm ${
+                      eyeMakeup === opt.value
+                        ? 'border-pink-400 bg-pink-50 font-semibold shadow-sm'
+                        : 'border-gray-200 bg-white text-gray-600'
+                    }`}
+                  >
+                    <span>{opt.emoji}</span>
+                    <span className="whitespace-nowrap">{opt.label}</span>
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* 귀걸이 (여성 전용) */}
+          {gender === 'female' && (
+            <section>
+              <h2 className="text-sm font-semibold text-gray-600 mb-2">귀걸이</h2>
+              <div className="grid grid-cols-3 gap-2">
+                {EARRING_OPTIONS.map(opt => (
+                  <button
+                    key={opt.value}
+                    onClick={() => setEarring(opt.value)}
+                    className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border-2 transition-all text-sm ${
+                      earring === opt.value
+                        ? 'border-pink-400 bg-pink-50 font-semibold shadow-sm'
+                        : 'border-gray-200 bg-white text-gray-600'
+                    }`}
+                  >
+                    <span>{opt.emoji}</span>
+                    <span className="whitespace-nowrap">{opt.label}</span>
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* 목걸이 (여성 전용) */}
+          {gender === 'female' && (
+            <section>
+              <h2 className="text-sm font-semibold text-gray-600 mb-2">목걸이</h2>
+              <div className="grid grid-cols-3 gap-2">
+                {NECKLACE_OPTIONS.map(opt => (
+                  <button
+                    key={opt.value}
+                    onClick={() => setNecklace(opt.value)}
+                    className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border-2 transition-all text-sm ${
+                      necklace === opt.value
+                        ? 'border-pink-400 bg-pink-50 font-semibold shadow-sm'
+                        : 'border-gray-200 bg-white text-gray-600'
+                    }`}
+                  >
+                    <span>{opt.emoji}</span>
+                    <span className="whitespace-nowrap">{opt.label}</span>
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
         </div>
 
         {error && (

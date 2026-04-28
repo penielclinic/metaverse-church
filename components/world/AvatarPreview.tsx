@@ -56,6 +56,380 @@ const HAIR_COLOR_MAP: Record<string, string> = Object.fromEntries(
 )
 const DEFAULT_HAIR_COLOR = '#3b2a1a'
 
+// ── 악세서리 옵션 ─────────────────────────────────────────────────────────────
+
+export const EYE_MAKEUP_OPTIONS = [
+  { value: 'none',      label: '없음',       emoji: '🚫' },
+  { value: 'natural',   label: '내추럴',     emoji: '✨' },
+  { value: 'cat_eye',   label: '캣아이',     emoji: '😸' },
+  { value: 'smoky',     label: '스모키',     emoji: '🖤' },
+  { value: 'colorful',  label: '컬러풀',     emoji: '🎨' },
+  { value: 'glitter',   label: '글리터',     emoji: '💫' },
+  { value: 'retro',     label: '레트로',     emoji: '🕶️' },
+  { value: 'gradient',  label: '그라데이션', emoji: '🌸' },
+  { value: 'innocent',  label: '청순',       emoji: '🌷' },
+  { value: 'bold',      label: '볼드',       emoji: '💄' },
+  { value: 'mono',      label: '모노리드',   emoji: '👁️' },
+]
+
+export const GLASSES_OPTIONS = [
+  { value: 'none',       label: '없음',       emoji: '🚫' },
+  { value: 'round',      label: '동그란',     emoji: '👓' },
+  { value: 'square',     label: '사각',       emoji: '🔲' },
+  { value: 'oval',       label: '타원',       emoji: '🔵' },
+  { value: 'half_rim',   label: '반무테',     emoji: '🪩' },
+  { value: 'rimless',    label: '무테',       emoji: '⬜' },
+  { value: 'sun_aviator',label: '에비에이터', emoji: '🕶️' },
+  { value: 'sun_wayfarer',label: '웨이퍼러',  emoji: '😎' },
+  { value: 'sun_oversized',label: '오버사이즈',emoji: '🌟' },
+  { value: 'sun_cat',    label: '캣선글라스', emoji: '😺' },
+  { value: 'sun_round',  label: '동그란선글라스',emoji: '🔴' },
+]
+
+export const EARRING_OPTIONS = [
+  { value: 'none',    label: '없음',   emoji: '🚫' },
+  { value: 'stud',    label: '스터드', emoji: '🔵' },
+  { value: 'hoop',    label: '후프',   emoji: '⭕' },
+  { value: 'drop',    label: '드롭',   emoji: '💧' },
+  { value: 'pearl',   label: '진주',   emoji: '🌕' },
+  { value: 'star',    label: '별',     emoji: '⭐' },
+  { value: 'heart',   label: '하트',   emoji: '❤️' },
+  { value: 'flower',  label: '꽃',     emoji: '🌸' },
+  { value: 'dangle',  label: '댕글',   emoji: '✨' },
+  { value: 'cross',   label: '십자가', emoji: '✝️' },
+  { value: 'chain',   label: '체인',   emoji: '🔗' },
+]
+
+export const NECKLACE_OPTIONS = [
+  { value: 'none',    label: '없음',   emoji: '🚫' },
+  { value: 'simple',  label: '심플체인',emoji: '➖' },
+  { value: 'pearl',   label: '진주목걸이',emoji: '🌕' },
+  { value: 'cross',   label: '십자가', emoji: '✝️' },
+  { value: 'heart',   label: '하트',   emoji: '❤️' },
+  { value: 'choker',  label: '초커',   emoji: '🖤' },
+  { value: 'layered', label: '레이어드',emoji: '✨' },
+  { value: 'star',    label: '별',     emoji: '⭐' },
+  { value: 'flower',  label: '꽃',     emoji: '🌸' },
+  { value: 'locket',  label: '로켓',   emoji: '💛' },
+  { value: 'ribbon',  label: '리본',   emoji: '🎀' },
+]
+
+/* ── 눈화장 (여성 전용) ── */
+function EyeMakeup({ style }: { style: string }) {
+  switch (style) {
+    case 'natural':
+      return <>
+        <ellipse cx="43" cy="37" rx="5"   ry="2.2" fill="#c4a882" opacity="0.38" />
+        <ellipse cx="57" cy="37" rx="5"   ry="2.2" fill="#c4a882" opacity="0.38" />
+        <path d="M39 41 Q43 42 47 41"  stroke="#5c3d2e" strokeWidth="0.8" fill="none" strokeLinecap="round" />
+        <path d="M53 41 Q57 42 61 41"  stroke="#5c3d2e" strokeWidth="0.8" fill="none" strokeLinecap="round" />
+      </>
+    case 'cat_eye':
+      return <>
+        <path d="M39 39 Q43 36.5 47 38.5 L49.5 35.5 L47.5 37.5" stroke="#111" strokeWidth="1.4" fill="#111" strokeLinecap="round" />
+        <path d="M53 39 Q57 36.5 61 38.5 L63.5 35.5 L61.5 37.5" stroke="#111" strokeWidth="1.4" fill="#111" strokeLinecap="round" />
+        <path d="M39 40.5 Q43 41.5 47 40.5" stroke="#111" strokeWidth="0.8" fill="none" />
+        <path d="M53 40.5 Q57 41.5 61 40.5" stroke="#111" strokeWidth="0.8" fill="none" />
+      </>
+    case 'smoky':
+      return <>
+        <ellipse cx="43" cy="37.5" rx="6.5" ry="3.5" fill="#1e1e2e" opacity="0.55" />
+        <ellipse cx="57" cy="37.5" rx="6.5" ry="3.5" fill="#1e1e2e" opacity="0.55" />
+        <ellipse cx="43" cy="41"   rx="5"   ry="2"   fill="#1e1e2e" opacity="0.3"  />
+        <ellipse cx="57" cy="41"   rx="5"   ry="2"   fill="#1e1e2e" opacity="0.3"  />
+      </>
+    case 'colorful':
+      return <>
+        <ellipse cx="43" cy="36.5" rx="6" ry="3"   fill="#a855f7" opacity="0.5"  />
+        <ellipse cx="57" cy="36.5" rx="6" ry="3"   fill="#a855f7" opacity="0.5"  />
+        <ellipse cx="43" cy="38.5" rx="4" ry="1.5" fill="#ec4899" opacity="0.45" />
+        <ellipse cx="57" cy="38.5" rx="4" ry="1.5" fill="#ec4899" opacity="0.45" />
+      </>
+    case 'glitter':
+      return <>
+        <ellipse cx="43" cy="37" rx="5.5" ry="2.5" fill="#fbbf24" opacity="0.38" />
+        <ellipse cx="57" cy="37" rx="5.5" ry="2.5" fill="#fbbf24" opacity="0.38" />
+        {[40,43,46].map(x => <circle key={x}    cx={x}  cy="35" r="0.8" fill="#fef9c3" opacity="0.9" />)}
+        {[54,57,60].map(x => <circle key={x+20} cx={x}  cy="35" r="0.8" fill="#fef9c3" opacity="0.9" />)}
+      </>
+    case 'retro':
+      return <>
+        <path d="M38 38.5 Q43 35.5 48 38.5" stroke="#111" strokeWidth="2.2" fill="none" strokeLinecap="round" />
+        <path d="M52 38.5 Q57 35.5 62 38.5" stroke="#111" strokeWidth="2.2" fill="none" strokeLinecap="round" />
+        <path d="M40 41  Q43 42.5 46 41"    stroke="#111" strokeWidth="1"   fill="none" />
+        <path d="M54 41  Q57 42.5 60 41"    stroke="#111" strokeWidth="1"   fill="none" />
+      </>
+    case 'gradient':
+      return <>
+        <ellipse cx="41" cy="37" rx="3.5" ry="2.5" fill="#fbcfe8" opacity="0.5"  />
+        <ellipse cx="55" cy="37" rx="3.5" ry="2.5" fill="#fbcfe8" opacity="0.5"  />
+        <ellipse cx="46" cy="37" rx="4.5" ry="2.5" fill="#ec4899" opacity="0.55" />
+        <ellipse cx="60" cy="37" rx="4.5" ry="2.5" fill="#ec4899" opacity="0.55" />
+      </>
+    case 'innocent':
+      return <>
+        <ellipse cx="43" cy="37" rx="5" ry="2" fill="#fce7f3" opacity="0.65" />
+        <ellipse cx="57" cy="37" rx="5" ry="2" fill="#fce7f3" opacity="0.65" />
+        <path d="M39 41 Q43 42 47 41"  stroke="#f9a8d4" strokeWidth="0.8" fill="none" />
+        <path d="M53 41 Q57 42 61 41"  stroke="#f9a8d4" strokeWidth="0.8" fill="none" />
+      </>
+    case 'bold':
+      return <>
+        <path d="M38 39 Q43 35 48 39 L49.5 37" stroke="#0a0a0a" strokeWidth="2.2" fill="#0a0a0a" strokeLinecap="round" />
+        <path d="M52 39 Q57 35 62 39 L63.5 37" stroke="#0a0a0a" strokeWidth="2.2" fill="#0a0a0a" strokeLinecap="round" />
+        <path d="M39 41.5 Q43 43 47 41.5"  stroke="#0a0a0a" strokeWidth="1.4" fill="none" />
+        <path d="M53 41.5 Q57 43 61 41.5"  stroke="#0a0a0a" strokeWidth="1.4" fill="none" />
+      </>
+    case 'mono':
+      return <>
+        <path d="M39 38.5 Q43 36 47 38.5" stroke="#3b2a1a" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+        <path d="M53 38.5 Q57 36 61 38.5" stroke="#3b2a1a" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+      </>
+    default:
+      return null
+  }
+}
+
+/* ── 안경 (공용) ── */
+function Glasses({ style }: { style: string }) {
+  if (style === 'none') return null
+
+  // 선글라스 렌즈 색상
+  const isSun = style.startsWith('sun_')
+  const lensOpacity = isSun ? 0.82 : 0
+
+  const LENS_COLOR: Record<string, string> = {
+    sun_aviator:   '#4a5568',
+    sun_wayfarer:  '#1a202c',
+    sun_oversized: '#744210',
+    sun_cat:       '#6b21a8',
+    sun_round:     '#991b1b',
+  }
+  const lensColor = LENS_COLOR[style] ?? '#1a202c'
+
+  switch (style) {
+    case 'round':
+    case 'sun_round':
+      return <>
+        {isSun && <>
+          <circle cx="43" cy="39" r="5.5" fill={lensColor} opacity={lensOpacity} />
+          <circle cx="57" cy="39" r="5.5" fill={lensColor} opacity={lensOpacity} />
+        </>}
+        <circle cx="43" cy="39" r="5.5" fill="none" stroke="#374151" strokeWidth="1.4" />
+        <circle cx="57" cy="39" r="5.5" fill="none" stroke="#374151" strokeWidth="1.4" />
+        <line x1="48.5" y1="39" x2="51.5" y2="39" stroke="#374151" strokeWidth="1.2" />
+        <line x1="29"   y1="38" x2="37.5" y2="39" stroke="#374151" strokeWidth="1.2" />
+        <line x1="62.5" y1="39" x2="71"   y2="38" stroke="#374151" strokeWidth="1.2" />
+      </>
+    case 'square':
+    case 'sun_wayfarer':
+      return <>
+        {isSun && <>
+          <rect x="37" y="34.5" width="12" height="9" rx="1.5" fill={lensColor} opacity={lensOpacity} />
+          <rect x="51" y="34.5" width="12" height="9" rx="1.5" fill={lensColor} opacity={lensOpacity} />
+        </>}
+        <rect x="37" y="34.5" width="12" height="9" rx="1.5" fill="none" stroke="#374151" strokeWidth="1.4" />
+        <rect x="51" y="34.5" width="12" height="9" rx="1.5" fill="none" stroke="#374151" strokeWidth="1.4" />
+        <line x1="49"  y1="39" x2="51"  y2="39" stroke="#374151" strokeWidth="1.2" />
+        <line x1="29"  y1="37" x2="37"  y2="38" stroke="#374151" strokeWidth="1.2" />
+        <line x1="63"  y1="38" x2="71"  y2="37" stroke="#374151" strokeWidth="1.2" />
+      </>
+    case 'oval':
+      return <>
+        <ellipse cx="43" cy="39" rx="6" ry="4.5" fill="none" stroke="#374151" strokeWidth="1.4" />
+        <ellipse cx="57" cy="39" rx="6" ry="4.5" fill="none" stroke="#374151" strokeWidth="1.4" />
+        <line x1="49"  y1="39" x2="51"  y2="39" stroke="#374151" strokeWidth="1.2" />
+        <line x1="29"  y1="38" x2="37"  y2="39" stroke="#374151" strokeWidth="1.2" />
+        <line x1="63"  y1="39" x2="71"  y2="38" stroke="#374151" strokeWidth="1.2" />
+      </>
+    case 'half_rim':
+      return <>
+        <path d="M37.5 39 A6 5 0 0 1 48.5 39" stroke="#374151" strokeWidth="1.4" fill="none" />
+        <path d="M51.5 39 A6 5 0 0 1 62.5 39" stroke="#374151" strokeWidth="1.4" fill="none" />
+        <line x1="37.5" y1="39" x2="48.5" y2="39" stroke="#374151" strokeWidth="0.6" strokeDasharray="2 1" />
+        <line x1="51.5" y1="39" x2="62.5" y2="39" stroke="#374151" strokeWidth="0.6" strokeDasharray="2 1" />
+        <line x1="49"   y1="39" x2="51.5" y2="39" stroke="#374151" strokeWidth="1.2" />
+        <line x1="29"   y1="38" x2="37.5" y2="39" stroke="#374151" strokeWidth="1.2" />
+        <line x1="62.5" y1="39" x2="71"   y2="38" stroke="#374151" strokeWidth="1.2" />
+      </>
+    case 'rimless':
+      return <>
+        <ellipse cx="43" cy="39" rx="5.5" ry="4" fill="none" stroke="#94a3b8" strokeWidth="0.7" strokeDasharray="2 1.5" />
+        <ellipse cx="57" cy="39" rx="5.5" ry="4" fill="none" stroke="#94a3b8" strokeWidth="0.7" strokeDasharray="2 1.5" />
+        <line x1="48.5" y1="39" x2="51.5" y2="39" stroke="#94a3b8" strokeWidth="0.8" />
+        <line x1="29"   y1="38" x2="37.5" y2="39" stroke="#94a3b8" strokeWidth="0.8" />
+        <line x1="62.5" y1="39" x2="71"   y2="38" stroke="#94a3b8" strokeWidth="0.8" />
+      </>
+    case 'sun_aviator':
+      return <>
+        <ellipse cx="43" cy="39.5" rx="6"   ry="5.5" fill={lensColor} opacity={lensOpacity} />
+        <ellipse cx="57" cy="39.5" rx="6"   ry="5.5" fill={lensColor} opacity={lensOpacity} />
+        <ellipse cx="43" cy="39.5" rx="6"   ry="5.5" fill="none" stroke="#b45309" strokeWidth="1.4" />
+        <ellipse cx="57" cy="39.5" rx="6"   ry="5.5" fill="none" stroke="#b45309" strokeWidth="1.4" />
+        <path d="M37 36 Q43 33 49 36" stroke="#b45309" strokeWidth="1" fill="none" />
+        <path d="M51 36 Q57 33 63 36" stroke="#b45309" strokeWidth="1" fill="none" />
+        <line x1="49"  y1="38" x2="51"  y2="38" stroke="#b45309" strokeWidth="1.2" />
+        <line x1="29"  y1="36" x2="37"  y2="38" stroke="#b45309" strokeWidth="1.2" />
+        <line x1="63"  y1="38" x2="71"  y2="36" stroke="#b45309" strokeWidth="1.2" />
+      </>
+    case 'sun_oversized':
+      return <>
+        <ellipse cx="43" cy="40" rx="8"   ry="6.5" fill={lensColor} opacity={lensOpacity} />
+        <ellipse cx="57" cy="40" rx="8"   ry="6.5" fill={lensColor} opacity={lensOpacity} />
+        <ellipse cx="43" cy="40" rx="8"   ry="6.5" fill="none" stroke="#78350f" strokeWidth="1.6" />
+        <ellipse cx="57" cy="40" rx="8"   ry="6.5" fill="none" stroke="#78350f" strokeWidth="1.6" />
+        <line x1="51"  y1="39" x2="49"  y2="39" stroke="#78350f" strokeWidth="1.4" />
+        <line x1="28"  y1="37" x2="35"  y2="39" stroke="#78350f" strokeWidth="1.4" />
+        <line x1="65"  y1="39" x2="72"  y2="37" stroke="#78350f" strokeWidth="1.4" />
+      </>
+    case 'sun_cat':
+      return <>
+        <path d="M37 40 Q40 34 48 37 L48 43 Q43 45 37 43 Z" fill={lensColor} opacity={lensOpacity} />
+        <path d="M51 40 Q54 34 62 37 L62 43 Q57 45 51 43 Z" fill={lensColor} opacity={lensOpacity} />
+        <path d="M37 40 Q40 34 48 37 L48 43 Q43 45 37 43 Z" fill="none" stroke="#6b21a8" strokeWidth="1.4" />
+        <path d="M51 40 Q54 34 62 37 L62 43 Q57 45 51 43 Z" fill="none" stroke="#6b21a8" strokeWidth="1.4" />
+        <line x1="48"  y1="40" x2="51"  y2="40" stroke="#6b21a8" strokeWidth="1.2" />
+        <line x1="29"  y1="39" x2="37"  y2="40" stroke="#6b21a8" strokeWidth="1.2" />
+        <line x1="62"  y1="40" x2="71"  y2="39" stroke="#6b21a8" strokeWidth="1.2" />
+      </>
+    default:
+      return null
+  }
+}
+
+/* ── 귀걸이 (여성 전용) ── */
+function Earring({ style }: { style: string }) {
+  if (style === 'none') return null
+  switch (style) {
+    case 'stud':
+      return <>
+        <circle cx="32" cy="42" r="2"   fill="#fbbf24" />
+        <circle cx="68" cy="42" r="2"   fill="#fbbf24" />
+      </>
+    case 'hoop':
+      return <>
+        <circle cx="32" cy="44" r="4"   fill="none" stroke="#d4af37" strokeWidth="1.8" />
+        <circle cx="68" cy="44" r="4"   fill="none" stroke="#d4af37" strokeWidth="1.8" />
+      </>
+    case 'drop':
+      return <>
+        <line   x1="32" y1="42" x2="32" y2="49" stroke="#9ca3af"  strokeWidth="1" />
+        <ellipse cx="32" cy="50" rx="2" ry="3" fill="#60a5fa" />
+        <line   x1="68" y1="42" x2="68" y2="49" stroke="#9ca3af"  strokeWidth="1" />
+        <ellipse cx="68" cy="50" rx="2" ry="3" fill="#60a5fa" />
+      </>
+    case 'pearl':
+      return <>
+        <circle cx="32" cy="43" r="2.5" fill="#f0f0f0" stroke="#e2e8f0" strokeWidth="0.5" />
+        <circle cx="68" cy="43" r="2.5" fill="#f0f0f0" stroke="#e2e8f0" strokeWidth="0.5" />
+      </>
+    case 'star':
+      return <>
+        <text x="30" y="46" fontSize="6" fill="#fbbf24">★</text>
+        <text x="66" y="46" fontSize="6" fill="#fbbf24">★</text>
+      </>
+    case 'heart':
+      return <>
+        <path d="M30 42 Q32 40 34 42 Q36 44 32 47 Q28 44 30 42 Z" fill="#f43f5e" transform="scale(0.7) translate(14,18)" />
+        <path d="M30 42 Q32 40 34 42 Q36 44 32 47 Q28 44 30 42 Z" fill="#f43f5e" transform="scale(0.7) translate(62,18)" />
+      </>
+    case 'flower':
+      return <>
+        <circle cx="32" cy="44" r="1.5" fill="#fbbf24" />
+        {[0,72,144,216,288].map(a => <ellipse key={a} cx={32+3*Math.cos(a*Math.PI/180)} cy={44+3*Math.sin(a*Math.PI/180)} rx="1.5" ry="1" fill="#f9a8d4" transform={`rotate(${a},${32+3*Math.cos(a*Math.PI/180)},${44+3*Math.sin(a*Math.PI/180)})`} />)}
+        <circle cx="68" cy="44" r="1.5" fill="#fbbf24" />
+        {[0,72,144,216,288].map(a => <ellipse key={a+10} cx={68+3*Math.cos(a*Math.PI/180)} cy={44+3*Math.sin(a*Math.PI/180)} rx="1.5" ry="1" fill="#f9a8d4" transform={`rotate(${a},${68+3*Math.cos(a*Math.PI/180)},${44+3*Math.sin(a*Math.PI/180)})`} />)}
+      </>
+    case 'dangle':
+      return <>
+        <line   x1="32" y1="42" x2="32" y2="46" stroke="#9ca3af" strokeWidth="1"  />
+        <circle cx="32" cy="47" r="1.5" fill="#a855f7" />
+        <line   x1="32" y1="48" x2="32" y2="52" stroke="#9ca3af" strokeWidth="1"  />
+        <circle cx="32" cy="53" r="2"   fill="#ec4899" />
+        <line   x1="68" y1="42" x2="68" y2="46" stroke="#9ca3af" strokeWidth="1"  />
+        <circle cx="68" cy="47" r="1.5" fill="#a855f7" />
+        <line   x1="68" y1="48" x2="68" y2="52" stroke="#9ca3af" strokeWidth="1"  />
+        <circle cx="68" cy="53" r="2"   fill="#ec4899" />
+      </>
+    case 'cross':
+      return <>
+        <line x1="32" y1="41" x2="32" y2="48" stroke="#d4af37" strokeWidth="1.5" strokeLinecap="round" />
+        <line x1="30" y1="43" x2="34" y2="43" stroke="#d4af37" strokeWidth="1.5" strokeLinecap="round" />
+        <line x1="68" y1="41" x2="68" y2="48" stroke="#d4af37" strokeWidth="1.5" strokeLinecap="round" />
+        <line x1="66" y1="43" x2="70" y2="43" stroke="#d4af37" strokeWidth="1.5" strokeLinecap="round" />
+      </>
+    case 'chain':
+      return <>
+        {[42,44,46,48,50].map(y => <circle key={y}    cx="32" cy={y} r="1.2" fill="none" stroke="#d4af37" strokeWidth="0.8" />)}
+        {[42,44,46,48,50].map(y => <circle key={y+20} cx="68" cy={y} r="1.2" fill="none" stroke="#d4af37" strokeWidth="0.8" />)}
+      </>
+    default:
+      return null
+  }
+}
+
+/* ── 목걸이 (여성 전용) ── */
+function Necklace({ style }: { style: string }) {
+  if (style === 'none') return null
+  switch (style) {
+    case 'simple':
+      return <path d="M36 60 Q50 68 64 60" stroke="#d4af37" strokeWidth="1.2" fill="none" strokeLinecap="round" />
+    case 'pearl':
+      return <>
+        <path d="M36 60 Q50 68 64 60" stroke="#d4d4d4" strokeWidth="0.7" fill="none" />
+        {[36,40,44,48,50,52,56,60,64].map((x,i) => {
+          const t = (i)/(8)
+          const cx2 = 36 + (64-36)*t
+          const cy2 = 60 + 8 * Math.sin(Math.PI * t)
+          return <circle key={i} cx={cx2} cy={cy2} r="1.8" fill="#f5f5f5" stroke="#e2e8f0" strokeWidth="0.4" />
+        })}
+      </>
+    case 'cross':
+      return <>
+        <path d="M38 59 Q50 66 62 59" stroke="#d4af37" strokeWidth="1.2" fill="none" />
+        <line x1="50" y1="65" x2="50" y2="73" stroke="#d4af37" strokeWidth="1.5" strokeLinecap="round" />
+        <line x1="47" y1="68" x2="53" y2="68" stroke="#d4af37" strokeWidth="1.5" strokeLinecap="round" />
+      </>
+    case 'heart':
+      return <>
+        <path d="M38 59 Q50 66 62 59" stroke="#f43f5e" strokeWidth="1.2" fill="none" />
+        <path d="M48 65 Q50 63 52 65 Q54 67 50 71 Q46 67 48 65 Z" fill="#f43f5e" />
+      </>
+    case 'choker':
+      return <path d="M34 58 Q50 63 66 58" stroke="#1e1b4b" strokeWidth="3" fill="none" strokeLinecap="round" />
+    case 'layered':
+      return <>
+        <path d="M38 59 Q50 65 62 59" stroke="#d4af37" strokeWidth="1" fill="none" />
+        <path d="M36 63 Q50 71 64 63" stroke="#9ca3af" strokeWidth="1" fill="none" />
+        <circle cx="50" cy="70" r="2" fill="#fbbf24" />
+      </>
+    case 'star':
+      return <>
+        <path d="M38 59 Q50 66 62 59" stroke="#c0c0c0" strokeWidth="1.2" fill="none" />
+        <text x="47" y="73" fontSize="7" fill="#fbbf24">★</text>
+      </>
+    case 'flower':
+      return <>
+        <path d="M38 59 Q50 66 62 59" stroke="#d4af37" strokeWidth="1.2" fill="none" />
+        <circle cx="50" cy="68" r="2" fill="#fbbf24" />
+        {[0,72,144,216,288].map(a => <ellipse key={a} cx={50+3.5*Math.cos(a*Math.PI/180)} cy={68+3.5*Math.sin(a*Math.PI/180)} rx="2" ry="1.2" fill="#f9a8d4" transform={`rotate(${a},${50+3.5*Math.cos(a*Math.PI/180)},${68+3.5*Math.sin(a*Math.PI/180)})`} />)}
+      </>
+    case 'locket':
+      return <>
+        <path d="M38 59 Q50 66 62 59" stroke="#d4af37" strokeWidth="1.2" fill="none" />
+        <rect x="47" y="64" width="6" height="7" rx="3" fill="#d4af37" />
+        <circle cx="50" cy="67.5" r="1.5" fill="#fef9c3" opacity="0.7" />
+      </>
+    case 'ribbon':
+      return <>
+        <path d="M38 59 Q50 65 62 59" stroke="#f9a8d4" strokeWidth="1.2" fill="none" />
+        <path d="M47 64 L50 68 L53 64 L56 66 L50 70 L44 66 Z" fill="#f472b6" opacity="0.85" />
+      </>
+    default:
+      return null
+  }
+}
+
 /* ── 남성 헤어 베이스 ── */
 function MaleHair({ style, c }: { style: string; c: string }) {
   switch (style) {
@@ -365,11 +739,16 @@ interface Props {
   svgHeight?: number
   faceOnly?: boolean
   upperBody?: boolean // 얼굴+상반신 표시 (교제광장 마커용)
+  eyeMakeup?: string
+  glasses?:   string
+  earring?:   string
+  necklace?:  string
 }
 
 export default function AvatarPreview({
   skinTone, gender, hairStyle, outfit, size = 120,
   svgWidth, svgHeight, faceOnly = false, upperBody = false,
+  eyeMakeup = 'none', glasses = 'none', earring = 'none', necklace = 'none',
 }: Props) {
   const skin = SKIN[skinTone] ?? SKIN.medium
   const w    = svgWidth  ?? size
@@ -425,6 +804,9 @@ export default function AvatarPreview({
       <circle cx="44" cy="38" r="1"   fill="#fff" />
       <circle cx="58" cy="38" r="1"   fill="#fff" />
 
+      {/* 눈화장 (여성) */}
+      {gender === 'female' && <EyeMakeup style={eyeMakeup} />}
+
       {/* 여성 속눈썹 */}
       {gender === 'female' && <>
         <path d="M40 36 L38 33" stroke="#1e293b" strokeWidth="1.2" strokeLinecap="round" />
@@ -434,6 +816,9 @@ export default function AvatarPreview({
         <path d="M57 35 L58 32" stroke="#1e293b" strokeWidth="1.2" strokeLinecap="round" />
         <path d="M60 36 L62 33" stroke="#1e293b" strokeWidth="1.2" strokeLinecap="round" />
       </>}
+
+      {/* 귀걸이 (여성) */}
+      {gender === 'female' && <Earring style={earring} />}
 
       {/* 코 */}
       <ellipse cx="50" cy="46" rx="2" ry="1.5" fill={skin} stroke="#c9956a" strokeWidth="0.8" />
@@ -448,6 +833,12 @@ export default function AvatarPreview({
         <circle cx="37" cy="46" r="5" fill="#f9a8a8" opacity="0.45" />
         <circle cx="63" cy="46" r="5" fill="#f9a8a8" opacity="0.45" />
       </>}
+
+      {/* 안경 */}
+      <Glasses style={glasses} />
+
+      {/* 목걸이 (여성) */}
+      {gender === 'female' && <Necklace style={necklace} />}
     </svg>
   )
 }

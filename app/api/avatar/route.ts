@@ -53,16 +53,14 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json()
-    const { skin_tone, gender, hair_style, outfit, name, titles } = body
+    const { skin_tone, gender, hair_style, outfit, name, titles,
+            eye_makeup, glasses, earring, necklace } = body
 
     const validSkinTones = ['light', 'medium', 'tan', 'dark']
     const validGenders   = ['male', 'female']
-    // hair_style은 "base+bangs+color" 조합 문자열이므로 base 부분만 검증
     const validHairBases = [
-      // 남성
       'short', 'sports', 'slickback', 'sidepart', 'curly', 'twoblock',
       'fade', 'medium', 'center', 'topknot', 'longhair', 'bald',
-      // 여성
       'bob', 'long', 'wave', 'ponytail', 'bun', 'straight',
       'twin', 'half_up', 'braid',
     ]
@@ -70,12 +68,21 @@ export async function POST(req: Request) {
       'casual', 'formal', 'hanbok', 'worship_team', 'pastor',
       'hoodie', 'shirt', 'blouse', 'sweater', 'vest',
     ]
+    const validEyeMakeup = ['none','natural','cat_eye','smoky','colorful','glitter','retro','gradient','innocent','bold','mono']
+    const validGlasses   = ['none','round','square','oval','half_rim','rimless','sun_aviator','sun_wayfarer','sun_oversized','sun_cat','sun_round']
+    const validEarring   = ['none','stud','hoop','drop','pearl','star','heart','flower','dangle','cross','chain']
+    const validNecklace  = ['none','simple','pearl','cross','heart','choker','layered','star','flower','locket','ribbon']
 
     const hairBase = typeof hair_style === 'string' ? hair_style.split('+')[0] : ''
     if (!validSkinTones.includes(skin_tone) || !validGenders.includes(gender) ||
         !validHairBases.includes(hairBase) || !validOutfits.includes(outfit)) {
       return NextResponse.json({ error: '유효하지 않은 값입니다.' }, { status: 400 })
     }
+    // 악세서리는 값이 있을 때만 검증 (없으면 기본값 'none')
+    const safeEyeMakeup = validEyeMakeup.includes(eye_makeup)  ? eye_makeup  : 'none'
+    const safeGlasses   = validGlasses.includes(glasses)       ? glasses     : 'none'
+    const safeEarring   = validEarring.includes(earring)       ? earring     : 'none'
+    const safeNecklace  = validNecklace.includes(necklace)     ? necklace    : 'none'
 
     // 이름 + 직분 업데이트 (titles 컬럼은 마이그레이션으로 추가됨 — 타입 무시)
     if (name && typeof name === 'string' && name.trim().length > 0) {
@@ -93,18 +100,20 @@ export async function POST(req: Request) {
       .eq('user_id', user.id)
       .single()
 
+    const accessoryFields = { eye_makeup: safeEyeMakeup, glasses: safeGlasses, earring: safeEarring, necklace: safeNecklace }
+
     if (existing) {
       const { error } = await supabase
         .from('avatars')
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .update({ skin_tone, gender, hair_style, outfit, updated_at: new Date().toISOString() } as any)
+        .update({ skin_tone, gender, hair_style, outfit, ...accessoryFields, updated_at: new Date().toISOString() } as any)
         .eq('user_id', user.id)
       if (error) return NextResponse.json({ error: '업데이트 실패' }, { status: 500 })
     } else {
       const { error } = await supabase
         .from('avatars')
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .insert({ user_id: user.id, skin_tone, gender, hair_style, outfit } as any)
+        .insert({ user_id: user.id, skin_tone, gender, hair_style, outfit, ...accessoryFields } as any)
       if (error) return NextResponse.json({ error: '생성 실패' }, { status: 500 })
     }
 
