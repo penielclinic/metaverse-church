@@ -52,14 +52,25 @@ export async function POST(req: Request) {
     const body = await req.json()
     const { skin_tone, gender, hair_style, outfit, name, titles } = body
 
-    const validSkinTones  = ['light', 'medium', 'tan', 'dark']
-    const validGenders    = ['male', 'female']
-    const validHairStyles = ['short', 'sports', 'slickback', 'sidepart', 'curly', 'bald',
-                             'bob', 'long', 'wave', 'ponytail', 'bun', 'bangs']
-    const validOutfits    = ['casual', 'formal', 'hanbok', 'worship_team', 'pastor']
+    const validSkinTones = ['light', 'medium', 'tan', 'dark']
+    const validGenders   = ['male', 'female']
+    // hair_style은 "base+bangs+color" 조합 문자열이므로 base 부분만 검증
+    const validHairBases = [
+      // 남성
+      'short', 'sports', 'slickback', 'sidepart', 'curly', 'twoblock',
+      'fade', 'medium', 'center', 'topknot', 'longhair', 'bald',
+      // 여성
+      'bob', 'long', 'wave', 'ponytail', 'bun', 'straight',
+      'twin', 'half_up', 'braid',
+    ]
+    const validOutfits = [
+      'casual', 'formal', 'hanbok', 'worship_team', 'pastor',
+      'hoodie', 'shirt', 'blouse', 'sweater', 'vest',
+    ]
 
+    const hairBase = typeof hair_style === 'string' ? hair_style.split('+')[0] : ''
     if (!validSkinTones.includes(skin_tone) || !validGenders.includes(gender) ||
-        !validHairStyles.includes(hair_style) || !validOutfits.includes(outfit)) {
+        !validHairBases.includes(hairBase) || !validOutfits.includes(outfit)) {
       return NextResponse.json({ error: '유효하지 않은 값입니다.' }, { status: 400 })
     }
 
