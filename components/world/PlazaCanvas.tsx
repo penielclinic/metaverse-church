@@ -567,23 +567,24 @@ function AvatarMarker({
         </div>
       )}
 
-      {/* 아바타 얼굴 */}
+      {/* 아바타 상반신 (세로 타원) */}
       <div
         className={[
-          'rounded-full border-2 bg-white shadow-md overflow-hidden',
+          'border-2 bg-white shadow-md overflow-hidden',
           avatar.isMe ? 'border-blue-500 ring-2 ring-blue-300' : 'border-white',
           avatar.moving ? 'animate-bounce' : '',
           isSeated ? 'opacity-90' : '',
         ].join(' ')}
-        style={{ width: 34, height: 34 }}
+        style={{ width: 38, height: 54, borderRadius: '50%' }}
       >
         <AvatarPreview
           skinTone={avatar.skinTone as SkinTone}
           gender={avatar.gender as Gender}
           hairStyle={avatar.hairStyle}
           outfit={avatar.outfit as Outfit}
-          size={34}
-          faceOnly
+          svgWidth={38}
+          svgHeight={54}
+          upperBody
         />
       </div>
 

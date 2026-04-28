@@ -356,19 +356,29 @@ function Body({ outfit, gender }: { outfit: Outfit; gender: Gender }) {
 }
 
 interface Props {
-  skinTone: SkinTone
-  gender:   Gender
+  skinTone:  SkinTone
+  gender:    Gender
   hairStyle: string   // "base" 또는 "base+bangs+color" 형식
-  outfit:   Outfit
-  size?:    number
+  outfit:    Outfit
+  size?:     number   // 정사각형일 때 (기본값)
+  svgWidth?: number   // 개별 지정 시 (비정방형)
+  svgHeight?: number
   faceOnly?: boolean
+  upperBody?: boolean // 얼굴+상반신 표시 (교제광장 마커용)
 }
 
 export default function AvatarPreview({
-  skinTone, gender, hairStyle, outfit, size = 120, faceOnly = false,
+  skinTone, gender, hairStyle, outfit, size = 120,
+  svgWidth, svgHeight, faceOnly = false, upperBody = false,
 }: Props) {
-  const skin    = SKIN[skinTone] ?? SKIN.medium
-  const viewBox = faceOnly ? '20 8 60 60' : '0 0 100 100'
+  const skin = SKIN[skinTone] ?? SKIN.medium
+  const w    = svgWidth  ?? size
+  const h    = svgHeight ?? size
+  // upperBody: 머리 꼭대기(y=5) ~ 칼라/상의(y=81) — 세로 타원 마커용
+  const viewBox = faceOnly  ? '20 8 60 60'
+                : upperBody ? '14 5 72 76'
+                :              '0 0 100 100'
+  const preserveAR = upperBody ? 'xMidYMid slice' : 'xMidYMid meet'
 
   // "bob+bangs+blonde" → baseStyle="bob", hasBangs=true, hairColor="#c9a227"
   const parts     = hairStyle.split('+')
@@ -378,7 +388,7 @@ export default function AvatarPreview({
   const hc        = colorSeg ? HAIR_COLOR_MAP[colorSeg] : DEFAULT_HAIR_COLOR
 
   return (
-    <svg width={size} height={size} viewBox={viewBox}
+    <svg width={w} height={h} viewBox={viewBox} preserveAspectRatio={preserveAR}
          xmlns="http://www.w3.org/2000/svg" aria-label="아바타 미리보기">
       {/* 몸 */}
       <Body outfit={outfit} gender={gender} />
