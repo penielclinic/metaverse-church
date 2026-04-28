@@ -794,8 +794,8 @@ export default function AvatarPreview({
         <path d="M40 32 Q43 30 46 32" stroke="#3b2a1a" strokeWidth="1.8" fill="none" strokeLinecap="round" />
         <path d="M54 32 Q57 30 60 32" stroke="#3b2a1a" strokeWidth="1.8" fill="none" strokeLinecap="round" />
       </> : <>
-        <path d="M39 31 Q43 28 47 31" stroke="#3b2a1a" strokeWidth="1.5" fill="none" strokeLinecap="round" />
-        <path d="M53 31 Q57 28 61 31" stroke="#3b2a1a" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+        <path d="M41.7 31 Q43 30 44.3 31" stroke="#3b2a1a" strokeWidth="0.5" fill="none" strokeLinecap="round" />
+        <path d="M55.7 31 Q57 30 58.3 31" stroke="#3b2a1a" strokeWidth="0.5" fill="none" strokeLinecap="round" />
       </>}
 
       {/* 눈 */}
