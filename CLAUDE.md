@@ -410,3 +410,4 @@ Supabase migrations → supabase db push
 5. **모바일 퍼스트** — 교인 대부분 스마트폰 접속, Three.js 성능 최적화 필수
 6. **Supabase Realtime 우선** — Socket.io는 Realtime으로 불가할 때만 도입
 7. **GSD 방식 개발** — 기능 단위 spec 작성 후 Claude Code로 구현
+8. **모든 사용자는 성도** — 메타버스에 접속한 모든 사람(목사·전도사·장로·집사 포함)은 성도(member)로 통칭한다. 카카오 로그인 시 role은 'member'로 자동 생성되며, 특수 역할(pastor 등)은 관리자 페이지에서 수동 부여한다.

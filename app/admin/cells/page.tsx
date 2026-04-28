@@ -2,6 +2,28 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import AvatarPreview from '@/components/world/AvatarPreview'
+import type { SkinTone, Gender, Outfit } from '@/components/world/AvatarPreview'
+
+interface MemberProfile {
+  id: string
+  name: string
+  phone: string | null
+  role: string
+  titles: string[]
+  cellName: string | null
+  skinTone: string
+  gender: string
+  hairStyle: string
+  outfit: string
+}
+
+const ROLE_LABEL: Record<string, string> = {
+  pastor: '담임목사', school_pastor: '교회학교 목사', mission_leader: '선교회장',
+  youth_pastor: '청년부 교역자', school_teacher: '교회학교 교사',
+  youth_leader: '청년회장', youth_vice_leader: '청년부회장', youth_secretary: '청년부총무',
+  cell_leader: '순장', youth: '청년', member: '성도',
+}
 
 interface CellDetail {
   id: number
@@ -19,6 +41,8 @@ export default function CellsPage() {
   const [expanded, setExpanded] = useState<number | null>(null)
   const [cellMembers, setCellMembers] = useState<{ id: string; name: string; phone: string | null }[]>([])
   const [loadingMembers, setLoadingMembers] = useState(false)
+  const [selectedMember, setSelectedMember] = useState<MemberProfile | null>(null)
+  const [loadingProfile, setLoadingProfile] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -76,6 +100,35 @@ export default function CellsPage() {
     load()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  const openMemberProfile = async (memberId: string) => {
+    setLoadingProfile(true)
+    const { data: p } = await supabase
+      .from('profiles')
+      .select('id, name, phone, role, titles, cell_id, cells!profiles_cell_id_fkey(name)')
+      .eq('id', memberId)
+      .single()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: av } = await (supabase.from('avatars') as any)
+      .select('skin_tone, gender, hair_style, outfit')
+      .eq('user_id', memberId)
+      .single()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const profile = p as any
+    setSelectedMember({
+      id: memberId,
+      name: profile?.name ?? '',
+      phone: profile?.phone ?? null,
+      role: profile?.role ?? 'member',
+      titles: Array.isArray(profile?.titles) ? profile.titles : [],
+      cellName: profile?.cells?.name ?? null,
+      skinTone: av?.skin_tone ?? 'medium',
+      gender: av?.gender ?? 'male',
+      hairStyle: av?.hair_style ?? 'short',
+      outfit: av?.outfit ?? 'casual',
+    })
+    setLoadingProfile(false)
+  }
 
   const toggleExpand = async (cellId: number) => {
     if (expanded === cellId) { setExpanded(null); return }
@@ -157,14 +210,14 @@ export default function CellsPage() {
                         ) : (
                           <div className="space-y-1.5">
                             {cellMembers.map((m) => (
-                              <div key={m.id} className="flex items-center justify-between">
-                                <span className="text-sm text-gray-700 whitespace-nowrap">{m.name}</span>
-                                {m.phone && (
-                                  <a href={`tel:${m.phone}`} className="text-xs text-indigo-500 whitespace-nowrap">
-                                    {m.phone}
-                                  </a>
-                                )}
-                              </div>
+                              <button
+                                key={m.id}
+                                onClick={() => openMemberProfile(m.id)}
+                                className="w-full flex items-center justify-between px-2 py-1.5 rounded-xl hover:bg-indigo-50 transition-colors text-left"
+                              >
+                                <span className="text-sm text-gray-700 whitespace-nowrap font-medium">{m.name}</span>
+                                <span className="text-xs text-indigo-400 whitespace-nowrap">상세 보기 →</span>
+                              </button>
                             ))}
                           </div>
                         )}
@@ -175,6 +228,75 @@ export default function CellsPage() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+      {/* 순원 프로필 모달 */}
+      {(selectedMember || loadingProfile) && (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 px-4 pb-4 sm:pb-0"
+          onClick={() => setSelectedMember(null)}
+        >
+          <div
+            className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {loadingProfile ? (
+              <div className="flex justify-center py-8">
+                <div className="w-8 h-8 border-4 border-indigo-400 border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : selectedMember && (
+              <>
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="w-16 h-16 rounded-full bg-indigo-100 overflow-hidden flex-shrink-0">
+                    <AvatarPreview
+                      skinTone={selectedMember.skinTone as SkinTone}
+                      gender={selectedMember.gender as Gender}
+                      hairStyle={selectedMember.hairStyle}
+                      outfit={selectedMember.outfit as Outfit}
+                      size={64}
+                      faceOnly
+                    />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-bold text-gray-800 text-base whitespace-nowrap">{selectedMember.name}</p>
+                    <p className="text-xs text-indigo-600 mt-0.5 whitespace-nowrap">
+                      {ROLE_LABEL[selectedMember.role] ?? selectedMember.role}
+                    </p>
+                    {selectedMember.cellName && (
+                      <p className="text-xs text-gray-400 whitespace-nowrap">{selectedMember.cellName}</p>
+                    )}
+                  </div>
+                </div>
+
+                {selectedMember.titles.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mb-3">
+                    {selectedMember.titles.map((t) => (
+                      <span key={t} className="text-[11px] px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 font-medium whitespace-nowrap">
+                        {t}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {selectedMember.phone && (
+                  <a
+                    href={`tel:${selectedMember.phone}`}
+                    className="flex items-center gap-2 w-full py-3 px-4 rounded-xl bg-green-50 text-green-700 text-sm font-semibold mb-2 hover:bg-green-100 transition-colors"
+                  >
+                    <span>📞</span>
+                    <span className="whitespace-nowrap">{selectedMember.phone}</span>
+                  </a>
+                )}
+
+                <button
+                  onClick={() => setSelectedMember(null)}
+                  className="w-full py-2.5 rounded-xl border border-gray-300 text-sm text-gray-600"
+                >
+                  닫기
+                </button>
+              </>
+            )}
+          </div>
         </div>
       )}
     </div>
