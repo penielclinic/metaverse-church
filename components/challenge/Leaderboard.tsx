@@ -21,7 +21,7 @@ const RANK_META: Record<number, { medal: string; bg: string; border: string; tex
 export default function Leaderboard({ entries }: LeaderboardProps) {
   return (
     <div>
-      <h2 className="text-base font-bold text-gray-800 mb-3">🏆 셀 주간 랭킹</h2>
+      <h2 className="text-base font-bold text-gray-800 mb-3">🏆 순 주간 랭킹</h2>
 
       <div className="space-y-2">
         {entries.map((entry) => {
@@ -92,7 +92,7 @@ export default function Leaderboard({ entries }: LeaderboardProps) {
         className="mt-2 text-center text-[11px] text-gray-400"
         style={{ wordBreak: 'keep-all' }}
       >
-        매주 월요일 0시 초기화 · 셀원 전체 누적 경험치 합산
+        매주 월요일 0시 초기화 · 순원 전체 누적 경험치 합산
       </p>
     </div>
   )

@@ -65,16 +65,16 @@ const INITIAL_BADGES: Badge[] = [
   { slug: 'worshiper',       label: '예배자',     emoji: '⛪', description: '예배 챌린지 4회 완료',     earned: false, earnedAt: null },
   { slug: 'servant',         label: '섬김이',     emoji: '🤝', description: '봉사 챌린지 3회 완료',     earned: false, earnedAt: null },
   { slug: 'streak_7',        label: '불꽃기도',   emoji: '🔥', description: '7일 연속 출석',             earned: false, earnedAt: null },
-  { slug: 'cell_champ',      label: '셀챔피언',   emoji: '🏆', description: '주간 셀 랭킹 1위 달성',    earned: false, earnedAt: null },
+  { slug: 'cell_champ',      label: '순챔피언',   emoji: '🏆', description: '주간 순 랭킹 1위 달성',    earned: false, earnedAt: null },
   { slug: 'devoted',         label: '충성된자',   emoji: '💎', description: '한 달 개근',                earned: false, earnedAt: null },
 ]
 
 const LEADERBOARD: LeaderboardEntry[] = [
-  { rank: 1, cellName: '소망셀', exp: 850, memberCount: 8, isMyCell: false },
-  { rank: 2, cellName: '믿음셀', exp: 720, memberCount: 7, isMyCell: false },
-  { rank: 3, cellName: '사랑셀', exp: 680, memberCount: 9, isMyCell: true  },
-  { rank: 4, cellName: '은혜셀', exp: 510, memberCount: 6, isMyCell: false },
-  { rank: 5, cellName: '평화셀', exp: 430, memberCount: 8, isMyCell: false },
+  { rank: 1, cellName: '1순', exp: 850, memberCount: 8, isMyCell: false },
+  { rank: 2, cellName: '2순', exp: 720, memberCount: 7, isMyCell: false },
+  { rank: 3, cellName: '3순', exp: 680, memberCount: 9, isMyCell: true  },
+  { rank: 4, cellName: '4순', exp: 510, memberCount: 6, isMyCell: false },
+  { rank: 5, cellName: '5순', exp: 430, memberCount: 8, isMyCell: false },
 ]
 
 // ─── 메인 페이지 ──────────────────────────────────────────────────────────────
@@ -240,7 +240,7 @@ export default function ChallengePage() {
           </div>
         </div>
 
-        {/* 셀 랭킹 보드 */}
+        {/* 순 랭킹 보드 */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
           <Leaderboard entries={LEADERBOARD} />
         </div>
