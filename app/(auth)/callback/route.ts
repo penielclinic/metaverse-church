@@ -26,7 +26,8 @@ export async function GET(request: Request) {
             meta.full_name ?? meta.name ?? meta.nickname ??
             user.email?.split('@')[0] ?? '성도'
 
-          await supabase.from('profiles').insert({
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await (supabase.from('profiles') as any).insert({
             id: user.id,
             name,
             role: 'member',
