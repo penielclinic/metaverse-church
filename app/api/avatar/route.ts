@@ -103,18 +103,12 @@ export async function POST(req: Request) {
     const accessoryFields = { eye_makeup: safeEyeMakeup, glasses: safeGlasses, earring: safeEarring, necklace: safeNecklace }
 
     if (existing) {
-      // 기본 외형 저장
-      const { error } = await supabase
-        .from('avatars')
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .update({ skin_tone, gender, hair_style, outfit, updated_at: new Date().toISOString() } as any)
+      // 기본 외형 + 악세서리 한 번에 저장
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase.from('avatars') as any)
+        .update({ skin_tone, gender, hair_style, outfit, updated_at: new Date().toISOString(), ...accessoryFields })
         .eq('user_id', user.id)
       if (error) return NextResponse.json({ error: '업데이트 실패' }, { status: 500 })
-      // 악세서리 저장 (migration 032 실행 완료 — 컬럼 존재)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase.from('avatars') as any)
-        .update({ ...accessoryFields })
-        .eq('user_id', user.id)
     } else {
       // 기본 외형 생성
       const { error } = await supabase
