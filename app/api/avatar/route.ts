@@ -110,25 +110,18 @@ export async function POST(req: Request) {
         .update({ skin_tone, gender, hair_style, outfit, updated_at: new Date().toISOString() } as any)
         .eq('user_id', user.id)
       if (error) return NextResponse.json({ error: '업데이트 실패' }, { status: 500 })
-      // 악세서리 저장 — 컬럼 미존재 시 조용히 무시 (migration 032 실행 전까지)
+      // 악세서리 저장 (migration 032 실행 완료 — 컬럼 존재)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (supabase.from('avatars') as any)
-        .update({ ...accessoryFields, updated_at: new Date().toISOString() })
+        .update({ ...accessoryFields })
         .eq('user_id', user.id)
-        .catch(() => {/* migration 032 미실행 시 무시 */})
     } else {
       // 기본 외형 생성
       const { error } = await supabase
         .from('avatars')
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .insert({ user_id: user.id, skin_tone, gender, hair_style, outfit } as any)
+        .insert({ user_id: user.id, skin_tone, gender, hair_style, outfit, ...accessoryFields } as any)
       if (error) return NextResponse.json({ error: '생성 실패' }, { status: 500 })
-      // 악세서리 저장 — 컬럼 미존재 시 조용히 무시
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase.from('avatars') as any)
-        .update({ ...accessoryFields })
-        .eq('user_id', user.id)
-        .catch(() => {/* migration 032 미실행 시 무시 */})
     }
 
     return NextResponse.json({ success: true })
