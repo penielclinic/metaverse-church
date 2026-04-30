@@ -18,7 +18,8 @@ interface Notice {
 export default function WorldPage() {
   const router = useRouter()
   const { setCurrentSpace, getSpaceUserCount } = useWorldStore()
-  const { name, level, skinTone, gender, hairStyle, outfit } = useAvatarStore()
+  const { name, level, skinTone, gender, hairStyle, outfit,
+          eyeMakeup, glasses, earring, necklace, hat } = useAvatarStore()
   const supabase = createClient()
 
   const [notice, setNotice]       = useState<Notice | null>(null)
@@ -162,6 +163,11 @@ export default function WorldPage() {
               gender={gender}
               hairStyle={hairStyle}
               outfit={outfit as 'casual' | 'formal' | 'hanbok' | 'worship_team' | 'pastor'}
+              eyeMakeup={eyeMakeup}
+              glasses={glasses}
+              earring={earring}
+              necklace={necklace}
+              hat={hat}
               size={56}
               faceOnly
             />

@@ -12,7 +12,7 @@ interface Profile {
 
 export default function PlazaPage() {
   const router = useRouter()
-  const { skinTone, gender, hairStyle, outfit } = useAvatarStore()
+  const { skinTone, gender, hairStyle, outfit, eyeMakeup, glasses, earring, necklace, hat } = useAvatarStore()
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -59,6 +59,11 @@ export default function PlazaPage() {
         gender={gender}
         hairStyle={hairStyle}
         outfit={outfit}
+        eyeMakeup={eyeMakeup}
+        glasses={glasses}
+        earring={earring}
+        necklace={necklace}
+        hat={hat}
       />
 
       {/* 접속자 수 표시는 Presence onSync에서 가져옴 — 향후 확장 */}

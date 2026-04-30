@@ -40,6 +40,7 @@ export default function WorldLayout({
             glasses:   a.glasses      ?? 'none',
             earring:   a.earring      ?? 'none',
             necklace:  a.necklace     ?? 'none',
+            hat:       a.hat          ?? 'none',
             level:     data.level     ?? 1,
             exp:       data.exp       ?? 0,
             expToNext: data.expToNext ?? 100,

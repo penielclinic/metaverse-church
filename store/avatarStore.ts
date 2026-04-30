@@ -18,6 +18,7 @@ interface AvatarState {
   glasses: string
   earring: string
   necklace: string
+  hat: string
   badge: string | null
   glowColor: GlowColor
   currentSpaceSlug: string | null
@@ -42,6 +43,7 @@ export const useAvatarStore = create<AvatarState>((set) => ({
   glasses: 'none',
   earring: 'none',
   necklace: 'none',
+  hat: 'none',
   badge: null,
   glowColor: 'none',
   currentSpaceSlug: null,

@@ -6,7 +6,8 @@ import { useWorldStore } from '@/store/worldStore'
 import AvatarPreview from '@/components/world/AvatarPreview'
 
 export default function HUD() {
-  const { name, level, exp, expToNext, badge, skinTone, gender, hairStyle, outfit } = useAvatarStore()
+  const { name, level, exp, expToNext, badge, skinTone, gender, hairStyle, outfit,
+          eyeMakeup, glasses, earring, necklace, hat } = useAvatarStore()
   const { currentSpaceName, totalOnline } = useWorldStore()
 
   const expPercent = Math.min(Math.round((exp / expToNext) * 100), 100)
@@ -27,6 +28,11 @@ export default function HUD() {
                   gender={gender}
                   hairStyle={hairStyle}
                   outfit={outfit as 'casual' | 'formal' | 'hanbok' | 'worship_team' | 'pastor'}
+                  eyeMakeup={eyeMakeup}
+                  glasses={glasses}
+                  earring={earring}
+                  necklace={necklace}
+                  hat={hat}
                   size={40}
                   faceOnly
                 />

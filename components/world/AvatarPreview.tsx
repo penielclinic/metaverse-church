@@ -114,6 +114,20 @@ export const NECKLACE_OPTIONS = [
   { value: 'ribbon',  label: '리본',   emoji: '🎀' },
 ]
 
+export const HAT_OPTIONS = [
+  { value: 'none',        label: '없음',     emoji: '🚫' },
+  { value: 'baseball',   label: '야구모자', emoji: '🧢' },
+  { value: 'beanie',     label: '비니',     emoji: '🪖' },
+  { value: 'fedora',     label: '페도라',   emoji: '🎩' },
+  { value: 'cowboy',     label: '카우보이', emoji: '🤠' },
+  { value: 'bucket',     label: '버킷햇',   emoji: '🪣' },
+  { value: 'beret',      label: '베레모',   emoji: '🎨' },
+  { value: 'santa',      label: '산타모자', emoji: '🎅' },
+  { value: 'graduation', label: '학사모',   emoji: '🎓' },
+  { value: 'chef',       label: '요리사모자',emoji: '👨‍🍳' },
+  { value: 'crown',      label: '왕관',     emoji: '👑' },
+]
+
 /* ── 눈화장 (여성 전용) ── */
 function EyeMakeup({ style }: { style: string }) {
   switch (style) {
@@ -191,6 +205,77 @@ function EyeMakeup({ style }: { style: string }) {
 }
 
 /* ── 안경 (공용) ── */
+/* ── 모자 ── */
+function Hat({ style }: { style: string }) {
+  if (style === 'none') return null
+  switch (style) {
+    case 'baseball':
+      return <>
+        <ellipse cx="50" cy="21" rx="18" ry="11" fill="#4a5568" />
+        <circle cx="50" cy="11" r="2" fill="#2d3748" />
+        <path d="M50 29 Q65 29 71 27 L70 31 Q58 34 50 33 Z" fill="#2d3748" />
+      </>
+    case 'beanie':
+      return <>
+        <ellipse cx="50" cy="18" rx="19" ry="13" fill="#e53e3e" />
+        <rect x="31" y="27" width="38" height="6" rx="3" fill="#c53030" />
+        <circle cx="50" cy="8" r="4" fill="#fc8181" />
+      </>
+    case 'fedora':
+      return <>
+        <ellipse cx="50" cy="27" rx="24" ry="4" fill="#744210" />
+        <rect x="34" y="11" width="32" height="17" rx="4" fill="#92400e" />
+        <line x1="34" y1="21" x2="66" y2="21" stroke="#78350f" strokeWidth="2" />
+      </>
+    case 'cowboy':
+      return <>
+        <path d="M24 27 Q50 34 76 27 Q70 31 50 32 Q30 31 24 27 Z" fill="#92400e" />
+        <ellipse cx="50" cy="19" rx="17" ry="12" fill="#b45309" />
+        <line x1="33" y1="25" x2="67" y2="25" stroke="#78350f" strokeWidth="2.5" />
+      </>
+    case 'bucket':
+      return <>
+        <path d="M33 15 Q31 28 29 30 Q40 34 60 34 Q71 30 67 30 Q69 16 67 15 Z" fill="#10b981" />
+        <ellipse cx="50" cy="15" rx="17" ry="4" fill="#059669" />
+        <ellipse cx="50" cy="30" rx="21" ry="4" fill="#059669" />
+      </>
+    case 'beret':
+      return <>
+        <ellipse cx="52" cy="17" rx="20" ry="10" fill="#7c3aed" />
+        <ellipse cx="50" cy="24" rx="16" ry="3" fill="#5b21b6" />
+        <circle cx="61" cy="12" r="2" fill="#5b21b6" />
+      </>
+    case 'santa':
+      return <>
+        <rect x="31" y="24" width="38" height="6" rx="3" fill="white" />
+        <path d="M33 26 L45 5 L62 8 L68 26 Z" fill="#dc2626" />
+        <circle cx="46" cy="4" r="4" fill="white" />
+      </>
+    case 'graduation':
+      return <>
+        <rect x="38" y="18" width="24" height="10" rx="2" fill="#1f2937" />
+        <rect x="27" y="14" width="46" height="5" rx="1" fill="#111827" />
+        <line x1="50" y1="14" x2="62" y2="23" stroke="#fbbf24" strokeWidth="1.5" />
+        <circle cx="63" cy="24" r="2.5" fill="#fbbf24" />
+      </>
+    case 'chef':
+      return <>
+        <ellipse cx="50" cy="13" rx="16" ry="8" fill="white" stroke="#e5e7eb" strokeWidth="0.8" />
+        <rect x="36" y="14" width="28" height="14" rx="2" fill="white" stroke="#e5e7eb" strokeWidth="0.8" />
+        <rect x="36" y="26" width="28" height="3" rx="0" fill="#f3f4f6" />
+      </>
+    case 'crown':
+      return <>
+        <path d="M32 28 L32 18 L41 24 L50 12 L59 24 L68 18 L68 28 Z" fill="#fbbf24" stroke="#f59e0b" strokeWidth="1" />
+        <circle cx="50" cy="21" r="2.5" fill="#ef4444" />
+        <circle cx="38.5" cy="23.5" r="1.5" fill="#3b82f6" />
+        <circle cx="61.5" cy="23.5" r="1.5" fill="#10b981" />
+      </>
+    default:
+      return null
+  }
+}
+
 function Glasses({ style }: { style: string }) {
   if (style === 'none') return null
 
@@ -743,19 +828,20 @@ interface Props {
   glasses?:   string
   earring?:   string
   necklace?:  string
+  hat?:       string
 }
 
 export default function AvatarPreview({
   skinTone, gender, hairStyle, outfit, size = 120,
   svgWidth, svgHeight, faceOnly = false, upperBody = false,
-  eyeMakeup = 'none', glasses = 'none', earring = 'none', necklace = 'none',
+  eyeMakeup = 'none', glasses = 'none', earring = 'none', necklace = 'none', hat = 'none',
 }: Props) {
   const skin = SKIN[skinTone] ?? SKIN.medium
   const w    = svgWidth  ?? size
   const h    = svgHeight ?? size
   // upperBody: 머리 꼭대기(y=5) ~ 칼라/상의(y=81) — 세로 타원 마커용
   const viewBox = faceOnly  ? '20 8 60 60'
-                : upperBody ? '14 5 72 76'
+                : upperBody ? '8 5 84 92'
                 :              '0 0 100 100'
   const preserveAR = upperBody ? 'xMidYMid slice' : 'xMidYMid meet'
 
@@ -833,6 +919,9 @@ export default function AvatarPreview({
         <circle cx="37" cy="46" r="5" fill="#f9a8a8" opacity="0.45" />
         <circle cx="63" cy="46" r="5" fill="#f9a8a8" opacity="0.45" />
       </>}
+
+      {/* 모자 */}
+      <Hat style={hat} />
 
       {/* 안경 */}
       <Glasses style={glasses} />

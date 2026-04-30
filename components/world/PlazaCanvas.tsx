@@ -52,6 +52,11 @@ interface PlazaCanvasProps {
   gender: string
   hairStyle: string
   outfit: string
+  eyeMakeup: string
+  glasses: string
+  earring: string
+  necklace: string
+  hat: string
 }
 
 interface AvatarOnMap extends PresenceUser {
@@ -64,7 +69,8 @@ interface ActiveBubble {
   key: string   // message id (변경 시 애니메이션 재시작)
 }
 
-export default function PlazaCanvas({ userId, name, skinTone, gender, hairStyle, outfit }: PlazaCanvasProps) {
+export default function PlazaCanvas({ userId, name, skinTone, gender, hairStyle, outfit,
+                                      eyeMakeup, glasses, earring, necklace, hat }: PlazaCanvasProps) {
   const floorRef  = useRef<HTMLDivElement>(null)
   const moveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -84,6 +90,7 @@ export default function PlazaCanvas({ userId, name, skinTone, gender, hairStyle,
   const me: PresenceUser = {
     userId, name, x: myPos.x, y: myPos.y,
     skinTone, gender, hairStyle, outfit,
+    eyeMakeup, glasses, earring, necklace, hat,
     benchId: myBench?.benchId ?? null,
     seatIndex: myBench?.seatIndex ?? null,
   }
@@ -575,15 +582,20 @@ function AvatarMarker({
           avatar.moving ? 'animate-bounce' : '',
           isSeated ? 'opacity-90' : '',
         ].join(' ')}
-        style={{ width: 38, height: 54, borderRadius: '50%' }}
+        style={{ width: 56, height: 66, borderRadius: '40%' }}
       >
         <AvatarPreview
           skinTone={avatar.skinTone as SkinTone}
           gender={avatar.gender as Gender}
           hairStyle={avatar.hairStyle}
           outfit={avatar.outfit as Outfit}
-          svgWidth={38}
-          svgHeight={54}
+          eyeMakeup={avatar.eyeMakeup ?? 'none'}
+          glasses={avatar.glasses ?? 'none'}
+          earring={avatar.earring ?? 'none'}
+          necklace={avatar.necklace ?? 'none'}
+          hat={avatar.hat ?? 'none'}
+          svgWidth={56}
+          svgHeight={66}
           upperBody
         />
       </div>

@@ -54,7 +54,7 @@ export async function POST(req: Request) {
 
     const body = await req.json()
     const { skin_tone, gender, hair_style, outfit, name, titles,
-            eye_makeup, glasses, earring, necklace } = body
+            eye_makeup, glasses, earring, necklace, hat } = body
 
     const validSkinTones = ['light', 'medium', 'tan', 'dark']
     const validGenders   = ['male', 'female']
@@ -72,6 +72,7 @@ export async function POST(req: Request) {
     const validGlasses   = ['none','round','square','oval','half_rim','rimless','sun_aviator','sun_wayfarer','sun_oversized','sun_cat','sun_round']
     const validEarring   = ['none','stud','hoop','drop','pearl','star','heart','flower','dangle','cross','chain']
     const validNecklace  = ['none','simple','pearl','cross','heart','choker','layered','star','flower','locket','ribbon']
+    const validHat       = ['none','baseball','beanie','fedora','cowboy','bucket','beret','santa','graduation','chef','crown']
 
     const hairBase = typeof hair_style === 'string' ? hair_style.split('+')[0] : ''
     if (!validSkinTones.includes(skin_tone) || !validGenders.includes(gender) ||
@@ -83,6 +84,7 @@ export async function POST(req: Request) {
     const safeGlasses   = validGlasses.includes(glasses)       ? glasses     : 'none'
     const safeEarring   = validEarring.includes(earring)       ? earring     : 'none'
     const safeNecklace  = validNecklace.includes(necklace)     ? necklace    : 'none'
+    const safeHat       = validHat.includes(hat)               ? hat         : 'none'
 
     // 이름 + 직분 업데이트 (titles 컬럼은 마이그레이션으로 추가됨 — 타입 무시)
     if (name && typeof name === 'string' && name.trim().length > 0) {
@@ -100,7 +102,7 @@ export async function POST(req: Request) {
       .eq('user_id', user.id)
       .single()
 
-    const accessoryFields = { eye_makeup: safeEyeMakeup, glasses: safeGlasses, earring: safeEarring, necklace: safeNecklace }
+    const accessoryFields = { eye_makeup: safeEyeMakeup, glasses: safeGlasses, earring: safeEarring, necklace: safeNecklace, hat: safeHat }
 
     if (existing) {
       // 기본 외형 + 악세서리 한 번에 저장

@@ -95,6 +95,11 @@ export interface PresenceUser {
   gender: string
   hairStyle: string
   outfit: string
+  eyeMakeup: string
+  glasses: string
+  earring: string
+  necklace: string
+  hat: string
   benchId: string | null    // 앉은 벤치 id (null = 서 있음)
   seatIndex: number | null  // 벤치 내 좌석 번호 (0~2)
 }

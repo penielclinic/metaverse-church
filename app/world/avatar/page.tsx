@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useAvatarStore } from '@/store/avatarStore'
 import AvatarPreview, {
   MALE_HAIR_OPTIONS, FEMALE_HAIR_OPTIONS, HAIR_COLOR_OPTIONS,
-  EYE_MAKEUP_OPTIONS, GLASSES_OPTIONS, EARRING_OPTIONS, NECKLACE_OPTIONS,
+  EYE_MAKEUP_OPTIONS, GLASSES_OPTIONS, EARRING_OPTIONS, NECKLACE_OPTIONS, HAT_OPTIONS,
   type SkinTone, type Gender, type Outfit,
 } from '@/components/world/AvatarPreview'
 
@@ -68,6 +68,7 @@ export default function AvatarPage() {
   const [glasses,    setGlasses]    = useState('none')
   const [earring,    setEarring]    = useState('none')
   const [necklace,   setNecklace]   = useState('none')
+  const [hat,        setHat]        = useState('none')
   const [saving,     setSaving]     = useState(false)
   const [error,      setError]      = useState<string | null>(null)
 
@@ -99,6 +100,7 @@ export default function AvatarPage() {
       if (a.glasses)     setGlasses(a.glasses)
       if (a.earring)     setEarring(a.earring)
       if (a.necklace)    setNecklace(a.necklace)
+      if (a.hat)         setHat(a.hat)
     })
   }, [isNew])
 
@@ -130,6 +132,7 @@ export default function AvatarPage() {
           glasses,
           earring,
           necklace,
+          hat,
           name: nameInput.trim(), titles,
         }),
       })
@@ -139,7 +142,7 @@ export default function AvatarPage() {
         return
       }
       setAvatar({ name: nameInput.trim(), titles, skinTone, gender, hairStyle: previewHair, outfit,
-                  eyeMakeup, glasses, earring, necklace })
+                  eyeMakeup, glasses, earring, necklace, hat })
       router.push('/world')
     } catch {
       setError('네트워크 오류가 발생했습니다.')
@@ -167,6 +170,7 @@ export default function AvatarPage() {
               hairStyle={previewHair} outfit={outfit}
               eyeMakeup={eyeMakeup} glasses={glasses}
               earring={earring} necklace={necklace}
+              hat={hat}
               size={110}
             />
           </div>
@@ -359,6 +363,27 @@ export default function AvatarPage() {
                   onClick={() => setGlasses(opt.value)}
                   className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border-2 transition-all text-sm ${
                     glasses === opt.value
+                      ? 'border-indigo-500 bg-indigo-50 font-semibold shadow-sm'
+                      : 'border-gray-200 bg-white text-gray-600'
+                  }`}
+                >
+                  <span>{opt.emoji}</span>
+                  <span className="whitespace-nowrap">{opt.label}</span>
+                </button>
+              ))}
+            </div>
+          </section>
+
+          {/* 모자 */}
+          <section>
+            <h2 className="text-sm font-semibold text-gray-600 mb-2">모자</h2>
+            <div className="grid grid-cols-3 gap-2">
+              {HAT_OPTIONS.map(opt => (
+                <button
+                  key={opt.value}
+                  onClick={() => setHat(opt.value)}
+                  className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border-2 transition-all text-sm ${
+                    hat === opt.value
                       ? 'border-indigo-500 bg-indigo-50 font-semibold shadow-sm'
                       : 'border-gray-200 bg-white text-gray-600'
                   }`}
