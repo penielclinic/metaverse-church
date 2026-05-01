@@ -34,9 +34,10 @@ export async function GET() {
       type: string; target_count: number; exp_reward: number
       badge_id: number | null; badges: BadgeRow | BadgeRow[]
     }
+    type LogRow = { challenge_id: number; progress: number; completed: boolean }
 
     const result = (challenges as ChallengeRow[]).map((c) => {
-      const log = logs?.find((l) => l.challenge_id === c.id)
+      const log = (logs as LogRow[] | null)?.find((l) => l.challenge_id === c.id)
       const badge = Array.isArray(c.badges) ? c.badges[0] : c.badges
       return {
         id:           c.id,
