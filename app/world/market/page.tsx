@@ -131,7 +131,7 @@ export default function MarketPage() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let q: any = supabase
       .from('sharing_items')
-      .select('id, user_id, title, description, category, type, price, contact, status, created_at, profiles(name)')
+      .select('id, user_id, title, description, category, type, price, contact, status, created_at, image_url, profiles(name)')
       .order('created_at', { ascending: false })
       .limit(60)
 
