@@ -21,39 +21,39 @@ interface NoticeBoardProps {
 const LAST_SEEN_KEY = (cellId: string) => `notice_last_seen_${cellId}`
 
 export default function NoticeBoard({ cellId, isLeader }: NoticeBoardProps) {
-  const [notices, setNotices]       = useState<Notice[]>([])
-  const [loading, setLoading]       = useState(true)
-  const [newCount, setNewCount]     = useState(0)
-  const [showForm, setShowForm]     = useState(false)
-  const [expanded, setExpanded]     = useState<number | null>(null)
-  const [deleting, setDeleting]     = useState<number | null>(null)
+  const [notices,    setNotices]    = useState<Notice[]>([])
+  const [loading,    setLoading]    = useState(true)
+  const [newCount,   setNewCount]   = useState(0)
+  const [showForm,   setShowForm]   = useState(false)
+  const [expanded,   setExpanded]   = useState<number | null>(null)
+  const [deleting,   setDeleting]   = useState<number | null>(null)
+  const [error,      setError]      = useState('')
 
-  // 작성 폼 상태
-  const [title, setTitle]       = useState('')
-  const [content, setContent]   = useState('')
-  const [isPinned, setIsPinned] = useState(false)
+  const [title,      setTitle]      = useState('')
+  const [content,    setContent]    = useState('')
+  const [isPinned,   setIsPinned]   = useState(false)
   const [submitting, setSubmitting] = useState(false)
-  const [formError, setFormError]   = useState('')
+  const [formError,  setFormError]  = useState('')
 
-  // ── 공지 불러오기 ───────────────────────────────────────────
   const fetchNotices = useCallback(async () => {
     setLoading(true)
+    setError('')
     try {
       const res = await fetch(`/api/cell/notice?cellId=${cellId}&type=notice`)
-      if (!res.ok) throw new Error()
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}))
+        setError(d.error ?? '공지를 불러오지 못했습니다.')
+        return
+      }
       const data: Notice[] = await res.json()
       setNotices(data)
 
-      // 새 공지 카운트 — localStorage의 마지막 확인 시각 기준
       const lastSeen = localStorage.getItem(LAST_SEEN_KEY(cellId))
       if (lastSeen) {
-        const count = data.filter(
-          (n) => new Date(n.created_at) > new Date(lastSeen)
-        ).length
-        setNewCount(count)
+        setNewCount(data.filter(n => new Date(n.created_at) > new Date(lastSeen)).length)
       }
     } catch {
-      // 조용히 실패
+      setError('네트워크 오류가 발생했습니다.')
     } finally {
       setLoading(false)
     }
@@ -61,36 +61,23 @@ export default function NoticeBoard({ cellId, isLeader }: NoticeBoardProps) {
 
   useEffect(() => { fetchNotices() }, [fetchNotices])
 
-  // 공지판 열람 시 last-seen 갱신
   useEffect(() => {
     localStorage.setItem(LAST_SEEN_KEY(cellId), new Date().toISOString())
     setNewCount(0)
   }, [cellId])
 
-  // ── 공지 작성 ───────────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!title.trim() || !content.trim()) {
-      setFormError('제목과 내용을 모두 입력해주세요.')
-      return
-    }
-    setSubmitting(true)
-    setFormError('')
+    if (!title.trim() || !content.trim()) { setFormError('제목과 내용을 모두 입력해주세요.'); return }
+    setSubmitting(true); setFormError('')
     try {
       const res = await fetch('/api/cell/notice', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: 'notice', cellId, title, content, is_pinned: isPinned }),
       })
-      if (!res.ok) {
-        const err = await res.json()
-        setFormError(err.error ?? '저장 실패')
-        return
-      }
-      setTitle('')
-      setContent('')
-      setIsPinned(false)
-      setShowForm(false)
+      if (!res.ok) { const err = await res.json(); setFormError(err.error ?? '저장 실패'); return }
+      setTitle(''); setContent(''); setIsPinned(false); setShowForm(false)
       await fetchNotices()
     } catch {
       setFormError('네트워크 오류가 발생했습니다.')
@@ -99,20 +86,16 @@ export default function NoticeBoard({ cellId, isLeader }: NoticeBoardProps) {
     }
   }
 
-  // ── 공지 삭제 ───────────────────────────────────────────────
   const handleDelete = async (id: number) => {
     if (!confirm('이 공지를 삭제하시겠습니까?')) return
     setDeleting(id)
     try {
       await fetch(`/api/cell/notice?id=${id}&type=notice`, { method: 'DELETE' })
-      setNotices((prev) => prev.filter((n) => n.id !== id))
+      setNotices(prev => prev.filter(n => n.id !== id))
       if (expanded === id) setExpanded(null)
-    } finally {
-      setDeleting(null)
-    }
+    } finally { setDeleting(null) }
   }
 
-  // 핀 고정 공지 위로 정렬
   const sorted = [...notices].sort((a, b) => {
     if (a.is_pinned !== b.is_pinned) return a.is_pinned ? -1 : 1
     return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
@@ -124,11 +107,12 @@ export default function NoticeBoard({ cellId, isLeader }: NoticeBoardProps) {
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 space-y-4">
+    <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(251,191,36,0.2)' }}>
       {/* 헤더 */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid rgba(251,191,36,0.1)' }}>
         <div className="flex items-center gap-2">
-          <h2 className="text-base font-bold text-gray-800">📋 공지사항</h2>
+          <span className="text-base">📋</span>
+          <h2 className="text-sm font-bold text-amber-200">공지사항</h2>
           {newCount > 0 && (
             <span className="min-w-[20px] h-5 px-1.5 bg-red-500 text-white text-[11px] font-bold rounded-full flex items-center justify-center">
               {newCount > 9 ? '9+' : newCount}
@@ -137,133 +121,101 @@ export default function NoticeBoard({ cellId, isLeader }: NoticeBoardProps) {
         </div>
         {isLeader && (
           <button
-            onClick={() => setShowForm((v) => !v)}
-            className="text-xs px-3 py-1.5 bg-indigo-600 text-white font-semibold rounded-full hover:bg-indigo-700 transition-colors"
+            onClick={() => setShowForm(v => !v)}
+            className="text-xs px-3 py-1.5 font-semibold rounded-full transition-colors"
+            style={{ background: showForm ? 'rgba(99,102,241,0.3)' : 'rgba(99,102,241,0.7)', color: 'white' }}
           >
             {showForm ? '취소' : '+ 새 공지'}
           </button>
         )}
       </div>
 
-      {/* 작성 폼 (순장) */}
+      {/* 작성 폼 */}
       {showForm && isLeader && (
-        <form
-          onSubmit={handleSubmit}
-          className="bg-indigo-50 rounded-xl p-4 space-y-3 border border-indigo-100"
-        >
+        <form onSubmit={handleSubmit} className="px-4 py-3 space-y-2.5" style={{ borderBottom: '1px solid rgba(251,191,36,0.1)', background: 'rgba(99,102,241,0.08)' }}>
           <input
-            type="text"
-            placeholder="공지 제목"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            maxLength={80}
-            className="w-full text-sm border border-indigo-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white"
+            type="text" placeholder="공지 제목" value={title}
+            onChange={e => setTitle(e.target.value)} maxLength={80}
+            className="w-full text-sm rounded-lg px-3 py-2 focus:outline-none text-white placeholder-slate-500"
+            style={{ background: 'rgba(30,27,75,0.8)', border: '1px solid rgba(99,102,241,0.4)' }}
           />
           <textarea
-            placeholder="공지 내용을 입력하세요"
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            maxLength={500}
-            rows={3}
-            className="w-full text-sm border border-indigo-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white resize-none"
+            placeholder="공지 내용을 입력하세요" value={content}
+            onChange={e => setContent(e.target.value)} maxLength={500} rows={3}
+            className="w-full text-sm rounded-lg px-3 py-2 focus:outline-none text-white placeholder-slate-500 resize-none"
+            style={{ background: 'rgba(30,27,75,0.8)', border: '1px solid rgba(99,102,241,0.4)' }}
           />
           <div className="flex items-center justify-between">
-            <label className="flex items-center gap-1.5 text-sm text-gray-600 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={isPinned}
-                onChange={(e) => setIsPinned(e.target.checked)}
-                className="rounded accent-indigo-600"
-              />
-              <span className="whitespace-nowrap">📌 상단 고정</span>
+            <label className="flex items-center gap-1.5 text-sm text-slate-300 cursor-pointer select-none">
+              <input type="checkbox" checked={isPinned} onChange={e => setIsPinned(e.target.checked)} className="rounded accent-indigo-400" />
+              <span className="whitespace-nowrap text-xs">📌 상단 고정</span>
             </label>
-            <button
-              type="submit"
-              disabled={submitting}
-              className="text-sm px-4 py-1.5 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors"
-            >
+            <button type="submit" disabled={submitting}
+              className="text-sm px-4 py-1.5 font-semibold rounded-lg disabled:opacity-50 transition-colors"
+              style={{ background: 'rgba(99,102,241,0.8)', color: 'white' }}>
               {submitting ? '저장 중…' : '게시'}
             </button>
           </div>
-          {formError && (
-            <p className="text-xs text-red-500">{formError}</p>
-          )}
+          {formError && <p className="text-xs text-red-400">{formError}</p>}
         </form>
       )}
 
       {/* 공지 목록 */}
-      {loading ? (
-        <div className="py-8 text-center text-sm text-gray-400">불러오는 중…</div>
-      ) : sorted.length === 0 ? (
-        <div className="py-8 text-center text-sm text-gray-400" style={{ wordBreak: 'keep-all' }}>
-          아직 공지가 없습니다.
-        </div>
-      ) : (
-        <ul className="space-y-2">
-          {sorted.map((notice) => (
-            <li
-              key={notice.id}
-              className={`rounded-xl border transition-colors ${
-                notice.is_pinned
-                  ? 'border-indigo-200 bg-indigo-50'
-                  : 'border-gray-100 bg-gray-50 hover:bg-gray-100'
-              }`}
-            >
-              {/* 공지 헤더 행 */}
+      <div className="divide-y" style={{ borderColor: 'rgba(251,191,36,0.08)' }}>
+        {loading ? (
+          <div className="py-8 flex justify-center">
+            <div className="w-5 h-5 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : error ? (
+          <div className="py-6 text-center">
+            <p className="text-sm text-red-400" style={{ wordBreak: 'keep-all' }}>{error}</p>
+            <button onClick={fetchNotices} className="mt-2 text-xs text-amber-400 underline">다시 시도</button>
+          </div>
+        ) : sorted.length === 0 ? (
+          <div className="py-10 text-center">
+            <p className="text-3xl mb-2 opacity-30">📋</p>
+            <p className="text-sm text-slate-500" style={{ wordBreak: 'keep-all' }}>아직 공지가 없습니다.</p>
+            {isLeader && <p className="text-xs text-slate-600 mt-1" style={{ wordBreak: 'keep-all' }}>위의 + 새 공지 버튼으로 작성해보세요.</p>}
+          </div>
+        ) : (
+          sorted.map(notice => (
+            <div key={notice.id} style={{ background: notice.is_pinned ? 'rgba(99,102,241,0.08)' : 'transparent' }}>
               <button
-                className="w-full flex items-start justify-between gap-2 px-3.5 py-3 text-left"
+                className="w-full flex items-start justify-between gap-2 px-4 py-3 text-left"
                 onClick={() => setExpanded(expanded === notice.id ? null : notice.id)}
               >
                 <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                  {notice.is_pinned && (
-                    <span className="text-indigo-500 flex-shrink-0 text-sm">📌</span>
-                  )}
-                  <span
-                    className="text-sm font-semibold text-gray-800 truncate"
-                    style={{ wordBreak: 'keep-all' }}
-                  >
+                  {notice.is_pinned && <span className="text-indigo-400 flex-shrink-0 text-sm">📌</span>}
+                  <span className="text-sm font-semibold text-slate-100 truncate" style={{ wordBreak: 'keep-all' }}>
                     {notice.title}
                   </span>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
-                  <span className="text-xs text-gray-400 whitespace-nowrap">
-                    {formatDate(notice.created_at)}
-                  </span>
-                  <span className={`text-gray-400 text-xs transition-transform ${expanded === notice.id ? 'rotate-180' : ''}`}>
-                    ▾
-                  </span>
+                  <span className="text-xs text-slate-500 whitespace-nowrap">{formatDate(notice.created_at)}</span>
+                  <span className={`text-slate-500 text-xs transition-transform ${expanded === notice.id ? 'rotate-180' : ''}`}>▾</span>
                 </div>
               </button>
 
-              {/* 펼침 내용 */}
               {expanded === notice.id && (
-                <div className="px-3.5 pb-3.5 space-y-2">
-                  <p
-                    className="text-sm text-gray-700 leading-relaxed"
-                    style={{ wordBreak: 'keep-all' }}
-                  >
+                <div className="px-4 pb-4 space-y-2" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                  <p className="text-sm text-slate-300 leading-relaxed pt-2" style={{ wordBreak: 'keep-all' }}>
                     {notice.content}
                   </p>
                   {notice.author_name && (
-                    <p className="text-xs text-gray-400">
-                      작성자: <span className="whitespace-nowrap">{notice.author_name}</span>
-                    </p>
+                    <p className="text-xs text-slate-500">작성자: <span className="whitespace-nowrap text-slate-400">{notice.author_name}</span></p>
                   )}
                   {isLeader && (
-                    <button
-                      onClick={() => handleDelete(notice.id)}
-                      disabled={deleting === notice.id}
-                      className="text-xs text-red-400 hover:text-red-600 disabled:opacity-50 transition-colors"
-                    >
+                    <button onClick={() => handleDelete(notice.id)} disabled={deleting === notice.id}
+                      className="text-xs text-red-400 hover:text-red-300 disabled:opacity-50 transition-colors">
                       {deleting === notice.id ? '삭제 중…' : '삭제'}
                     </button>
                   )}
                 </div>
               )}
-            </li>
-          ))}
-        </ul>
-      )}
+            </div>
+          ))
+        )}
+      </div>
     </div>
   )
 }

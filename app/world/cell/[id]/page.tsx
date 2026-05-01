@@ -277,7 +277,7 @@ export default function CellRoomPage() {
     if (!myUserId) return null
     switch (activeDrawer) {
       case 'word':
-        return <div className="p-4"><WordBoard cellId={Number(id)} isLeader={isLeader} /></div>
+        return <div className="flex-1 overflow-y-auto p-4 pb-8"><WordBoard cellId={Number(id)} isLeader={isLeader} /></div>
 
       case 'chat':
         return (
@@ -319,22 +319,27 @@ export default function CellRoomPage() {
         )
 
       case 'attendance':
-        return <div className="p-4"><AttendanceBoard cellId={Number(id)} /></div>
+        return <div className="flex-1 overflow-y-auto p-4 pb-8"><AttendanceBoard cellId={Number(id)} /></div>
 
       case 'prayer':
-        return <div className="p-4"><PrayerBoard cellId={Number(id)} myUserId={myUserId} /></div>
+        return <div className="flex-1 overflow-y-auto p-4 pb-8"><PrayerBoard cellId={Number(id)} myUserId={myUserId} /></div>
 
       case 'notice':
-        return <div className="p-4 space-y-4"><NoticeBoard cellId={id} isLeader={isLeader} /><ScheduleCalendar cellId={id} isLeader={isLeader} /></div>
+        return (
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-8">
+            <NoticeBoard cellId={id} isLeader={isLeader} />
+            <ScheduleCalendar cellId={id} isLeader={isLeader} />
+          </div>
+        )
 
       case 'timer':
-        return <div className="p-4"><MeetingTimer cellId={id} isLeader={isLeader} /></div>
+        return <div className="flex-1 overflow-y-auto p-4 pb-8"><MeetingTimer cellId={id} isLeader={isLeader} /></div>
 
       case 'mvp':
-        return <div className="p-4"><MVPVote cellId={Number(id)} myUserId={myUserId} isLeader={isLeader} /></div>
+        return <div className="flex-1 overflow-y-auto p-4 pb-8"><MVPVote cellId={Number(id)} myUserId={myUserId} isLeader={isLeader} /></div>
 
       case 'album':
-        return <div className="p-4"><CellAlbum cellId={Number(id)} myUserId={myUserId} isLeader={isLeader} /></div>
+        return <div className="flex-1 overflow-y-auto p-4 pb-8"><CellAlbum cellId={Number(id)} myUserId={myUserId} isLeader={isLeader} /></div>
 
       case 'requests':
         return (
@@ -633,7 +638,7 @@ export default function CellRoomPage() {
           <div className="absolute bottom-0 left-0 right-0 rounded-t-3xl overflow-hidden flex flex-col"
             style={{
               zIndex: 40,
-              height: activeDrawer === 'chat' || activeDrawer === 'board' ? '84vh' : '78vh',
+              height: activeDrawer === 'chat' || activeDrawer === 'board' || activeDrawer === 'notice' ? '90vh' : '78vh',
               background: 'linear-gradient(180deg,#0d1120 0%,#111827 100%)',
               border: `1px solid ${activeBoard?.accent ?? 'rgba(251,191,36,0.2)'}30`,
               borderBottom: 'none',
