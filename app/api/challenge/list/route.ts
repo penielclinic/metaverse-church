@@ -22,8 +22,8 @@ export async function GET() {
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
     // 이번 주 내 진행 로그
-    const { data: logs } = await supabase
-      .from('challenge_logs')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: logs } = await (supabase.from('challenge_logs') as any)
       .select('challenge_id, progress, completed')
       .eq('user_id', user.id)
       .eq('week_num', weekNum)
