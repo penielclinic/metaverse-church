@@ -37,6 +37,7 @@ type DbNote = {
 export default function PrayerPage() {
   const [notes, setNotes] = useState<PrayerNote[]>([])
   const [myUserId, setMyUserId] = useState<string | null>(null)
+  const [myRole, setMyRole] = useState<string>('')
   const [showModal, setShowModal] = useState(false)
   const [inputText, setInputText] = useState('')
   const [isAnonymous, setIsAnonymous] = useState(false)
@@ -71,10 +72,19 @@ export default function PrayerPage() {
       } = await supabase.auth.getUser()
       setMyUserId(user?.id ?? null)
 
+      if (user?.id) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single()
+        if (profile) setMyRole((profile as { role: string }).role ?? '')
+      }
+
       const { data, error } = await supabase
         .from('prayer_notes')
         .select(
-          `id, content, is_anonymous, amen_count, color,
+          `id, user_id, content, is_anonymous, amen_count, color,
            profiles ( name ),
            prayer_amens ( user_id )`
         )
@@ -102,7 +112,7 @@ export default function PrayerPage() {
           const { data } = await supabase
             .from('prayer_notes')
             .select(
-              `id, content, is_anonymous, amen_count, color,
+              `id, user_id, content, is_anonymous, amen_count, color,
                profiles ( name ),
                prayer_amens ( user_id )`
             )
@@ -245,8 +255,8 @@ export default function PrayerPage() {
                     🙏 <span>{note.amenCount}</span>
                   </button>
 
-                  {/* 삭제 버튼 — 내 글만 표시 */}
-                  {note.userId === myUserId && (
+                  {/* 삭제 버튼 — 본인 또는 관리자(pastor) */}
+                  {(note.userId === myUserId || ['pastor', 'youth_pastor'].includes(myRole)) && (
                     deleteConfirmId === note.id ? (
                       <div className="flex gap-1">
                         <button
