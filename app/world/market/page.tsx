@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import Image from 'next/image'
 
 type Category = 'all' | 'clothes' | 'books' | 'food' | 'talent' | 'etc'
 type ItemType = 'all' | 'free' | 'barter' | 'sale'
@@ -200,17 +199,22 @@ export default function MarketPage() {
       const ext = imageFile.name.split('.').pop()?.toLowerCase() ?? 'jpg'
       const path = `${myUserId}/${Date.now()}.${ext}`
       const mimeType = imageFile.type || `image/${ext}`
+      const arrayBuffer = await imageFile.arrayBuffer()
       const { error: storageErr } = await supabase.storage
         .from('market-images')
-        .upload(path, imageFile, { contentType: mimeType, upsert: false })
-      if (!storageErr) {
-        const { data: urlData } = supabase.storage.from('market-images').getPublicUrl(path)
-        imageUrl = urlData.publicUrl
+        .upload(path, arrayBuffer, { contentType: mimeType, upsert: false })
+      if (storageErr) {
+        console.error('[market upload]', storageErr)
+        setImageError(`사진 업로드 실패: ${storageErr.message}`)
+        setSubmitting(false)
+        return
       }
+      const { data: urlData } = supabase.storage.from('market-images').getPublicUrl(path)
+      imageUrl = urlData.publicUrl
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase.from('sharing_items') as any).insert({
+    const { error: dbErr } = await (supabase.from('sharing_items') as any).insert({
       user_id: myUserId,
       title: form.title.trim(),
       description: form.description.trim() || null,
@@ -221,6 +225,10 @@ export default function MarketPage() {
       image_url: imageUrl,
     })
     setSubmitting(false)
+    if (dbErr) {
+      setImageError(`등록 실패: ${dbErr.message}`)
+      return
+    }
     setShowModal(false)
     setForm({ title: '', description: '', category: 'etc', type: 'free', price: '', contact: '' })
     removeImage()
@@ -330,13 +338,12 @@ export default function MarketPage() {
               >
                 {/* 이미지 썸네일 */}
                 {item.imageUrl ? (
-                  <div className="relative w-full aspect-square bg-gray-100">
-                    <Image
+                  <div className="relative w-full aspect-square bg-gray-100 overflow-hidden">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
                       src={item.imageUrl}
                       alt={item.title}
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 640px) 50vw, 33vw"
+                      className="w-full h-full object-cover"
                     />
                     {item.status !== 'active' && (
                       <span className="absolute top-1.5 right-1.5 text-[10px] px-1.5 py-0.5 rounded-full bg-gray-800/70 text-white whitespace-nowrap">
@@ -404,13 +411,12 @@ export default function MarketPage() {
           <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl overflow-hidden max-h-[90vh] overflow-y-auto">
             {/* 상품 이미지 */}
             {detail.imageUrl && (
-              <div className="relative w-full aspect-video bg-gray-100">
-                <Image
+              <div className="w-full aspect-video bg-gray-100 overflow-hidden">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
                   src={detail.imageUrl}
                   alt={detail.title}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 640px) 100vw, 384px"
+                  className="w-full h-full object-cover"
                 />
               </div>
             )}
@@ -591,7 +597,8 @@ export default function MarketPage() {
             <label className="block text-xs font-semibold text-gray-600 mb-1">물품 사진 (선택)</label>
             {imagePreview ? (
               <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-gray-100 mb-3">
-                <Image src={imagePreview} alt="미리보기" fill className="object-cover" sizes="100vw" />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={imagePreview} alt="미리보기" className="w-full h-full object-cover" />
                 <button
                   type="button"
                   onClick={removeImage}
