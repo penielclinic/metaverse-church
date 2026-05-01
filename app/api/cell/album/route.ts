@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 const BUCKET = 'cell-album'
 const MAX_FILE_SIZE = 10 * 1024 * 1024
-const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif']
 
 // GET /api/cell/album?cellId=1
 export async function GET(req: Request) {
@@ -16,8 +17,10 @@ export async function GET(req: Request) {
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
 
+    // admin으로 조회 (RLS 우회 — 멤버 검증은 위에서 완료)
+    const admin = createAdminClient()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
+    const { data, error } = await (admin as any)
       .from('cell_album')
       .select('id, cell_id, user_id, storage_path, public_url, file_name, created_at, profiles:user_id ( name )')
       .eq('cell_id', cellId)
@@ -55,47 +58,57 @@ export async function POST(req: Request) {
 
     if (!cellId) return NextResponse.json({ error: 'cellId가 필요합니다.' }, { status: 400 })
     if (!file)   return NextResponse.json({ error: '파일이 없습니다.' }, { status: 400 })
-    if (!ALLOWED_TYPES.includes(file.type))
+
+    // 파일 타입 체크 (MIME이 없을 경우 확장자로 fallback)
+    const mimeType = file.type || `image/${file.name.split('.').pop()?.toLowerCase()}`
+    const normalizedType = ALLOWED_TYPES.includes(mimeType) ? mimeType : null
+    if (!normalizedType)
       return NextResponse.json({ error: 'JPG, PNG, WEBP 파일만 업로드할 수 있습니다.' }, { status: 400 })
+
     if (file.size > MAX_FILE_SIZE)
       return NextResponse.json({ error: '파일 크기는 10MB 이하여야 합니다.' }, { status: 400 })
 
-    // 셀 멤버 확인
+    // 셀 멤버 확인 (user 클라이언트)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: profile } = await (supabase as any)
       .from('profiles').select('role, cell_id').eq('id', user.id).single()
 
-    const isMember = profile?.cell_id === cellId || profile?.role === 'pastor' || profile?.role === 'youth_pastor'
+    const isMember = profile?.cell_id === cellId
+      || profile?.role === 'pastor'
+      || profile?.role === 'youth_pastor'
+      || profile?.role === 'cell_leader'
     if (!isMember) return NextResponse.json({ error: '해당 셀 멤버만 업로드할 수 있습니다.' }, { status: 403 })
 
-    // Storage 업로드
-    const ext          = file.name.split('.').pop()?.toLowerCase() ?? 'jpg'
-    const date         = new Date().toISOString().slice(0, 10)
-    const uuid         = crypto.randomUUID()
-    const storagePath  = `cell-${cellId}/${date}-${uuid}.${ext}`
-    const arrayBuffer  = await file.arrayBuffer()
+    // Storage 업로드 (user 클라이언트)
+    const ext         = file.name.split('.').pop()?.toLowerCase() ?? 'jpg'
+    const date        = new Date().toISOString().slice(0, 10)
+    const uuid        = crypto.randomUUID()
+    const storagePath = `cell-${cellId}/${date}-${uuid}.${ext}`
+    const arrayBuffer = await file.arrayBuffer()
 
     const { error: storageError } = await supabase.storage
-      .from(BUCKET).upload(storagePath, arrayBuffer, { contentType: file.type, upsert: false })
+      .from(BUCKET).upload(storagePath, arrayBuffer, { contentType: normalizedType, upsert: false })
 
     if (storageError) {
       console.error('[cell/album POST storage]', storageError)
-      return NextResponse.json({ error: '파일 업로드 실패' }, { status: 500 })
+      return NextResponse.json({ error: `파일 업로드 실패: ${storageError.message}` }, { status: 500 })
     }
 
     const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(storagePath)
 
-    // DB INSERT
+    // DB INSERT — admin 클라이언트로 RLS 우회 (멤버 검증은 위에서 완료)
+    const admin = createAdminClient()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: inserted, error: dbError } = await (supabase as any)
+    const { data: inserted, error: dbError } = await (admin as any)
       .from('cell_album')
       .insert({ cell_id: cellId, user_id: user.id, storage_path: storagePath, public_url: urlData.publicUrl, file_name: file.name })
       .select().single()
 
     if (dbError) {
+      // DB 실패 시 Storage에서도 정리
       await supabase.storage.from(BUCKET).remove([storagePath])
       console.error('[cell/album POST db]', dbError)
-      return NextResponse.json({ error: 'DB 저장 실패' }, { status: 500 })
+      return NextResponse.json({ error: `DB 저장 실패: ${dbError.message}` }, { status: 500 })
     }
 
     return NextResponse.json({ success: true, data: inserted }, { status: 201 })
@@ -116,8 +129,10 @@ export async function DELETE(req: Request) {
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
 
+    const admin = createAdminClient()
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: photo } = await (supabase as any)
+    const { data: photo } = await (admin as any)
       .from('cell_album').select('user_id, cell_id, storage_path').eq('id', id).single()
 
     if (!photo) return NextResponse.json({ error: '사진을 찾을 수 없습니다.' }, { status: 404 })
@@ -137,7 +152,7 @@ export async function DELETE(req: Request) {
     await supabase.storage.from(BUCKET).remove([photo.storage_path])
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error: dbError } = await (supabase as any).from('cell_album').delete().eq('id', id)
+    const { error: dbError } = await (admin as any).from('cell_album').delete().eq('id', id)
     if (dbError) {
       console.error('[cell/album DELETE db]', dbError)
       return NextResponse.json({ error: '삭제 실패' }, { status: 500 })
