@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import Image from 'next/image'
 
 type Category = 'all' | 'clothes' | 'books' | 'food' | 'talent' | 'etc'
 type ItemType = 'all' | 'free' | 'barter' | 'sale'
@@ -19,6 +20,7 @@ interface SharingItem {
   contact: string | null
   status: ItemStatus
   createdAt: string
+  imageUrl: string | null
 }
 
 const CATEGORY_LABEL: Record<string, string> = {
@@ -78,6 +80,7 @@ type DbItem = {
   contact: string | null
   status: ItemStatus
   created_at: string
+  image_url: string | null
   profiles: { name: string } | null
 }
 
@@ -92,6 +95,9 @@ function timeAgo(dateStr: string) {
   if (d < 7) return `${d}일 전`
   return new Date(dateStr).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })
 }
+
+const MAX_IMAGE_SIZE = 10 * 1024 * 1024
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif']
 
 export default function MarketPage() {
   const supabase = createClient()
@@ -112,6 +118,10 @@ export default function MarketPage() {
     price: '',
     contact: '',
   })
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [imageError, setImageError] = useState('')
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [submitting, setSubmitting] = useState(false)
 
   // 상세 보기
@@ -144,6 +154,7 @@ export default function MarketPage() {
         contact: d.contact,
         status: d.status,
         createdAt: d.created_at,
+        imageUrl: d.image_url ?? null,
       }))
     )
     setLoading(false)
@@ -156,9 +167,48 @@ export default function MarketPage() {
 
   useEffect(() => { load() }, [load])
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setImageError('')
+    const mimeType = file.type || `image/${file.name.split('.').pop()?.toLowerCase()}`
+    if (!ALLOWED_IMAGE_TYPES.includes(mimeType)) {
+      setImageError('JPG, PNG, WEBP 파일만 업로드 가능합니다.')
+      return
+    }
+    if (file.size > MAX_IMAGE_SIZE) {
+      setImageError('파일 크기는 10MB 이하여야 합니다.')
+      return
+    }
+    setImageFile(file)
+    setImagePreview(URL.createObjectURL(file))
+  }
+
+  const removeImage = () => {
+    setImageFile(null)
+    setImagePreview(null)
+    setImageError('')
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
   const handleSubmit = async () => {
     if (!form.title.trim() || !myUserId) return
     setSubmitting(true)
+
+    let imageUrl: string | null = null
+    if (imageFile) {
+      const ext = imageFile.name.split('.').pop()?.toLowerCase() ?? 'jpg'
+      const path = `${myUserId}/${Date.now()}.${ext}`
+      const mimeType = imageFile.type || `image/${ext}`
+      const { error: storageErr } = await supabase.storage
+        .from('market-images')
+        .upload(path, imageFile, { contentType: mimeType, upsert: false })
+      if (!storageErr) {
+        const { data: urlData } = supabase.storage.from('market-images').getPublicUrl(path)
+        imageUrl = urlData.publicUrl
+      }
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (supabase.from('sharing_items') as any).insert({
       user_id: myUserId,
@@ -168,10 +218,12 @@ export default function MarketPage() {
       type: form.type,
       price: form.type === 'sale' && form.price ? Number(form.price) : null,
       contact: form.contact.trim() || null,
+      image_url: imageUrl,
     })
     setSubmitting(false)
     setShowModal(false)
     setForm({ title: '', description: '', category: 'etc', type: 'free', price: '', contact: '' })
+    removeImage()
     load()
   }
 
@@ -272,43 +324,64 @@ export default function MarketPage() {
                 key={item.id}
                 onClick={() => setDetail(item)}
                 className={[
-                  'text-left bg-white rounded-2xl border border-gray-200 shadow-sm p-3.5 transition-all hover:shadow-md active:scale-[0.98]',
+                  'text-left bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden transition-all hover:shadow-md active:scale-[0.98]',
                   item.status !== 'active' ? 'opacity-60' : '',
                 ].join(' ')}
               >
-                {/* 카테고리 이모지 + 상태 */}
-                <div className="flex items-start justify-between gap-1 mb-2">
-                  <span className="text-2xl leading-none">
-                    {CATEGORY_EMOJI[item.category] ?? '📦'}
-                  </span>
-                  {item.status !== 'active' && (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-200 text-gray-500 whitespace-nowrap">
-                      {STATUS_LABEL[item.status]}
-                    </span>
+                {/* 이미지 썸네일 */}
+                {item.imageUrl ? (
+                  <div className="relative w-full aspect-square bg-gray-100">
+                    <Image
+                      src={item.imageUrl}
+                      alt={item.title}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 640px) 50vw, 33vw"
+                    />
+                    {item.status !== 'active' && (
+                      <span className="absolute top-1.5 right-1.5 text-[10px] px-1.5 py-0.5 rounded-full bg-gray-800/70 text-white whitespace-nowrap">
+                        {STATUS_LABEL[item.status]}
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center w-full aspect-square bg-gray-50">
+                    <span className="text-4xl leading-none">{CATEGORY_EMOJI[item.category] ?? '📦'}</span>
+                  </div>
+                )}
+
+                <div className="p-3">
+                  {/* 카테고리 이모지 + 상태 (이미지 없을 때 상태 뱃지) */}
+                  {!item.imageUrl && item.status !== 'active' && (
+                    <div className="flex justify-end mb-1">
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-200 text-gray-500 whitespace-nowrap">
+                        {STATUS_LABEL[item.status]}
+                      </span>
+                    </div>
                   )}
-                </div>
 
-                {/* 제목 */}
-                <p className="text-sm font-semibold text-gray-800 leading-snug line-clamp-2 mb-2" style={{ wordBreak: 'keep-all' }}>
-                  {item.title}
-                </p>
+                  {/* 제목 */}
+                  <p className="text-sm font-semibold text-gray-800 leading-snug line-clamp-2 mb-2" style={{ wordBreak: 'keep-all' }}>
+                    {item.title}
+                  </p>
 
-                {/* 타입 + 가격 */}
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className={['text-[10px] px-2 py-0.5 rounded-full font-semibold whitespace-nowrap', TYPE_COLOR[item.type] ?? 'bg-gray-100 text-gray-600'].join(' ')}>
-                    {TYPE_LABEL[item.type] ?? item.type}
-                  </span>
-                  {item.type === 'sale' && item.price != null && (
-                    <span className="text-xs font-bold text-amber-600 whitespace-nowrap">
-                      {item.price.toLocaleString()}원
+                  {/* 타입 + 가격 */}
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className={['text-[10px] px-2 py-0.5 rounded-full font-semibold whitespace-nowrap', TYPE_COLOR[item.type] ?? 'bg-gray-100 text-gray-600'].join(' ')}>
+                      {TYPE_LABEL[item.type] ?? item.type}
                     </span>
-                  )}
-                </div>
+                    {item.type === 'sale' && item.price != null && (
+                      <span className="text-xs font-bold text-amber-600 whitespace-nowrap">
+                        {item.price.toLocaleString()}원
+                      </span>
+                    )}
+                  </div>
 
-                {/* 작성자 + 시간 */}
-                <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100">
-                  <span className="text-[10px] text-gray-400 whitespace-nowrap truncate">{item.authorName}</span>
-                  <span className="text-[10px] text-gray-400 whitespace-nowrap ml-1">{timeAgo(item.createdAt)}</span>
+                  {/* 작성자 + 시간 */}
+                  <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100">
+                    <span className="text-[10px] text-gray-400 whitespace-nowrap truncate">{item.authorName}</span>
+                    <span className="text-[10px] text-gray-400 whitespace-nowrap ml-1">{timeAgo(item.createdAt)}</span>
+                  </div>
                 </div>
               </button>
             ))}
@@ -328,7 +401,20 @@ export default function MarketPage() {
       {/* 상세 보기 모달 */}
       {detail && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 px-4 pb-4 sm:pb-0">
-          <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-5">
+          <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl overflow-hidden max-h-[90vh] overflow-y-auto">
+            {/* 상품 이미지 */}
+            {detail.imageUrl && (
+              <div className="relative w-full aspect-video bg-gray-100">
+                <Image
+                  src={detail.imageUrl}
+                  alt={detail.title}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 640px) 100vw, 384px"
+                />
+              </div>
+            )}
+            <div className="p-5">
             {/* 카테고리 + 타입 */}
             <div className="flex items-center gap-2 mb-3">
               <span className="text-3xl">{CATEGORY_EMOJI[detail.category] ?? '📦'}</span>
@@ -411,6 +497,7 @@ export default function MarketPage() {
             >
               닫기
             </button>
+            </div>{/* p-5 */}
           </div>
         </div>
       )}
@@ -497,8 +584,41 @@ export default function MarketPage() {
               onChange={(e) => setForm({ ...form, contact: e.target.value })}
               placeholder="카카오 ID 또는 전화번호"
               maxLength={50}
-              className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+              className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-indigo-300"
             />
+
+            {/* 이미지 업로드 */}
+            <label className="block text-xs font-semibold text-gray-600 mb-1">물품 사진 (선택)</label>
+            {imagePreview ? (
+              <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-gray-100 mb-3">
+                <Image src={imagePreview} alt="미리보기" fill className="object-cover" sizes="100vw" />
+                <button
+                  type="button"
+                  onClick={removeImage}
+                  className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 text-white flex items-center justify-center text-sm leading-none"
+                >
+                  ×
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full border-2 border-dashed border-gray-300 rounded-xl py-6 text-sm text-gray-400 hover:border-indigo-300 hover:text-indigo-400 transition-colors mb-3 flex flex-col items-center gap-1"
+              >
+                <span className="text-2xl leading-none">📷</span>
+                <span className="whitespace-nowrap">사진 추가</span>
+                <span className="text-[10px] text-gray-400">JPG · PNG · WEBP · 최대 10MB</span>
+              </button>
+            )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+              className="hidden"
+              onChange={handleImageChange}
+            />
+            {imageError && <p className="text-xs text-red-500 mb-2">{imageError}</p>}
 
             <div className="flex gap-2">
               <button
