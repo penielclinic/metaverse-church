@@ -38,6 +38,7 @@ export default function VisitorsBadge() {
 
       setTotal(count ?? 0)
       setVisitors(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (data ?? []).map((p: any) => ({
           id: p.id,
           name: p.name,
