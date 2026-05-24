@@ -7,6 +7,7 @@ import SpaceCard from '@/components/world/SpaceCard'
 import { useWorldStore } from '@/store/worldStore'
 import { useAvatarStore } from '@/store/avatarStore'
 import AvatarPreview from '@/components/world/AvatarPreview'
+import VisitorsBadge from '@/components/world/VisitorsBadge'
 import { SPACES } from '@/lib/spaces'
 import { createClient } from '@/lib/supabase/client'
 
@@ -153,6 +154,9 @@ export default function WorldPage() {
           + 알림글 {notice ? '수정' : '작성'}
         </button>
       ) : null}
+
+      {/* 접속자 뱃지 */}
+      <VisitorsBadge />
 
       {/* 아바타 카드 */}
       <Link href="/world/avatar">
