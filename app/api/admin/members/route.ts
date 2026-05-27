@@ -27,11 +27,16 @@ export async function GET(req: NextRequest) {
 
   const admin = createAdminClient()
 
-  // auth.users 에서 마지막 로그인 시각 수집 (service role 전용)
-  const { data: authData } = await admin.auth.admin.listUsers({ perPage: 1000 })
-  const authMap = new Map(
-    (authData?.users ?? []).map(u => [u.id, u.last_sign_in_at ?? null])
-  )
+  // auth.users 에서 마지막 로그인 시각 수집 (실패 시 빈 맵으로 대체)
+  let authMap = new Map<string, string | null>()
+  try {
+    const { data: authData } = await admin.auth.admin.listUsers({ perPage: 1000 })
+    authMap = new Map(
+      (authData?.users ?? []).map(u => [u.id, u.last_sign_in_at ?? null])
+    )
+  } catch {
+    // service role 미설정 등 환경 문제 시 무시하고 profiles만 반환
+  }
 
   // 역할별 조회 범위 제한
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
