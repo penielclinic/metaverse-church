@@ -19,7 +19,7 @@ const ROLE_LABEL: Record<string, string> = {
   pastor: '담임목사', school_pastor: '교회학교 목사', mission_leader: '선교회장',
   youth_pastor: '청년부 교역자', school_teacher: '교회학교 교사',
   youth_leader: '청년회장', youth_vice_leader: '청년부회장', youth_secretary: '청년부총무',
-  cell_leader: '순장', youth: '청년', member: '성도',
+  cell_leader: '순장', youth: '청년', member: '성도', elder: '장로',
 }
 const ROLE_COLOR: Record<string, string> = {
   pastor: 'bg-purple-100 text-purple-700',
@@ -33,6 +33,7 @@ const ROLE_COLOR: Record<string, string> = {
   cell_leader: 'bg-green-100 text-green-700',
   youth: 'bg-gray-100 text-gray-600',
   member: 'bg-gray-100 text-gray-600',
+  elder: 'bg-yellow-100 text-yellow-700',
 }
 
 const ALL_ROLES = Object.keys(ROLE_LABEL)

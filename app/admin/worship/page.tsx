@@ -13,7 +13,7 @@ const ROLE_LABEL: Record<string, string> = {
   pastor: '담임목사', school_pastor: '교회학교 목사', mission_leader: '선교회장',
   youth_pastor: '청년부 교역자', school_teacher: '교회학교 교사',
   youth_leader: '청년회장', youth_vice_leader: '청년부회장', youth_secretary: '청년부총무',
-  cell_leader: '순장', youth: '청년', member: '성도',
+  cell_leader: '순장', youth: '청년', member: '성도', elder: '장로',
 }
 
 function formatDate(dateStr: string): string {

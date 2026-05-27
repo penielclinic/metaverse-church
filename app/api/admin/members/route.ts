@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 const ADMIN_ROLES = [
-  'pastor', 'school_pastor', 'mission_leader', 'youth_pastor',
+  'pastor', 'elder', 'school_pastor', 'mission_leader', 'youth_pastor',
   'youth_leader', 'youth_vice_leader', 'youth_secretary', 'school_teacher', 'cell_leader',
 ]
 
