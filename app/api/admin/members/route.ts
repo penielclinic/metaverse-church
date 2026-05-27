@@ -40,11 +40,12 @@ export async function GET(req: NextRequest) {
     .select(`id, name, phone, role, cell_id, created_at, cells ( name ), missions ( name )`)
     .order('name')
 
-  if (caller.role === 'cell_leader' || caller.role === 'school_teacher') {
+  const callerRole = caller.role as string
+  if (callerRole === 'cell_leader' || callerRole === 'school_teacher') {
     q = q.eq('cell_id', caller.cell_id)
-  } else if (caller.role === 'youth_pastor' || caller.role === 'mission_leader') {
+  } else if (callerRole === 'youth_pastor' || callerRole === 'mission_leader') {
     q = q.eq('mission_id', caller.mission_id)
-  } else if (caller.role === 'school_pastor') {
+  } else if (callerRole === 'school_pastor') {
     const { data: m } = await admin.from('missions').select('id').eq('name', '교회학교').single()
     if (m) q = q.eq('mission_id', m.id)
   }

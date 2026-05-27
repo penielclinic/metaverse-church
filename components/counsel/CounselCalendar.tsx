@@ -61,16 +61,16 @@ export default function CounselCalendar({ onClose, onSuccess }: Props) {
 
   // 교역자 목록 로드
   useEffect(() => {
-    supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(supabase as any)
       .from('profiles')
       .select('id, name, role, counselor_title')
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .eq('is_counselor' as any, true)
+      .eq('is_counselor', true)
       .order('name')
-      .then(({ data }) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .then(({ data }: { data: any }) => {
         if (data) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          setCounselors(data as any)
+          setCounselors(data)
           if (data.length > 0) setSelectedCounselor(data[0].id)
         }
       })

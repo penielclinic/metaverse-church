@@ -62,7 +62,8 @@ export default function SanctuaryLive() {
     if (!liveVideoId || !userId || viewRecordedRef.current) return
     viewRecordedRef.current = true
     const today = new Date().toISOString().split('T')[0]
-    supabase.from('worship_views').upsert(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(supabase as any).from('worship_views').upsert(
       { user_id: userId, worship_date: today, youtube_id: liveVideoId },
       { onConflict: 'user_id,worship_date' }
     ).then(() => {/* 기록 완료 */})
@@ -106,7 +107,8 @@ export default function SanctuaryLive() {
     // DB 저장 (로그인한 경우)
     if (userId) {
       const today = new Date().toISOString().split('T')[0]
-      supabase.from('worship_reactions').insert({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ;(supabase as any).from('worship_reactions').insert({
         user_id: userId,
         reaction: type,
         worship_date: today,

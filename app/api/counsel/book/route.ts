@@ -90,7 +90,8 @@ export async function POST(req: Request) {
   // 신청자 + 담당 교역자 정보 조회
   const [{ data: requester }, { data: counselor }] = await Promise.all([
     supabase.from('profiles').select('phone, name').eq('id', user.id).single(),
-    supabase.from('profiles').select('phone, name, counselor_title').eq('id', counselor_id).single(),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (supabase as any).from('profiles').select('phone, name, counselor_title').eq('id', counselor_id).single(),
   ])
 
   const methodLabel: Record<string, string> = {

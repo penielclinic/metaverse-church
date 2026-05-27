@@ -68,7 +68,7 @@ export default function WorshipPage() {
         if (key in day.reactions) day.reactions[key]++
       }
 
-      setDays([...dayMap.values()].sort((a, b) => b.date.localeCompare(a.date)))
+      setDays(Array.from(dayMap.values()).sort((a, b) => b.date.localeCompare(a.date)))
       setLoading(false)
     }
     load()
