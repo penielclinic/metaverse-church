@@ -12,6 +12,7 @@ interface Member {
   cellName: string | null
   missionName: string | null
   createdAt: string | null
+  lastSignInAt: string | null
 }
 
 const ROLE_LABEL: Record<string, string> = {
@@ -36,10 +37,32 @@ const ROLE_COLOR: Record<string, string> = {
 
 const ALL_ROLES = Object.keys(ROLE_LABEL)
 
+function timeAgo(dateStr: string | null): string {
+  if (!dateStr) return '—'
+  const diff = Date.now() - new Date(dateStr).getTime()
+  const minutes = Math.floor(diff / 60000)
+  if (minutes < 1) return '방금'
+  if (minutes < 60) return `${minutes}분 전`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours}시간 전`
+  const days = Math.floor(hours / 24)
+  if (days < 30) return `${days}일 전`
+  const months = Math.floor(days / 30)
+  if (months < 12) return `${months}개월 전`
+  return `${Math.floor(months / 12)}년 전`
+}
+
+function formatDate(dateStr: string | null): string {
+  if (!dateStr) return '—'
+  return new Date(dateStr).toLocaleDateString('ko-KR', {
+    year: 'numeric', month: 'long', day: 'numeric',
+  })
+}
+
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center gap-3 py-2 border-b border-gray-100 last:border-0">
-      <span className="text-xs text-gray-400 w-16 flex-shrink-0 whitespace-nowrap">{label}</span>
+      <span className="text-xs text-gray-400 w-20 flex-shrink-0 whitespace-nowrap">{label}</span>
       <span className="text-sm text-gray-800" style={{ wordBreak: 'keep-all' }}>{value}</span>
     </div>
   )
@@ -52,8 +75,6 @@ export default function MembersPage() {
   const [roleFilter, setRoleFilter] = useState('')
   const [loading, setLoading] = useState(true)
   const [myRole, setMyRole] = useState('')
-  const [myMissionId, setMyMissionId] = useState<number | null>(null)
-  const [myCellId, setMyCellId] = useState<number | null>(null)
   const [editing, setEditing] = useState<{ id: string; role: string; cellId: number | null } | null>(null)
   const [detail, setDetail] = useState<Member | null>(null)
   const [cells, setCells] = useState<{ id: number; name: string }[]>([])
@@ -65,11 +86,8 @@ export default function MembersPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { setLoading(false); return }
       const { data: profile } = await supabase
-        .from('profiles').select('role, mission_id, cell_id').eq('id', user.id).single()
+        .from('profiles').select('role').eq('id', user.id).single()
       setMyRole(profile?.role ?? 'member')
-      setMyMissionId(profile?.mission_id ?? null)
-      setMyCellId(profile?.cell_id ?? null)
-
       const { data: allCells } = await supabase.from('cells').select('id, name').order('id')
       setCells(allCells ?? [])
       setInitialized(true)
@@ -80,41 +98,16 @@ export default function MembersPage() {
 
   const load = useCallback(async () => {
     setLoading(true)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let q: any = supabase
-      .from('profiles')
-      .select(`id, name, phone, role, cell_id, created_at, cells ( name ), missions ( name )`)
-      .order('name')
+    const params = new URLSearchParams()
+    if (search.trim()) params.set('search', search.trim())
+    if (roleFilter) params.set('role', roleFilter)
 
-    // 역할별 조회 범위 제한
-    if (myRole === 'cell_leader' || myRole === 'school_teacher') {
-      q = q.eq('cell_id', myCellId)
-    } else if (myRole === 'youth_pastor' || myRole === 'mission_leader') {
-      q = q.eq('mission_id', myMissionId)
-    } else if (myRole === 'school_pastor') {
-      const { data: m } = await supabase.from('missions').select('id').eq('name', '교회학교').single()
-      q = q.eq('mission_id', m?.id)
-    }
-
-    if (search.trim()) q = q.ilike('name', `%${search.trim()}%`)
-    if (roleFilter) q = q.eq('role', roleFilter)
-
-    const { data } = await q
-    setMembers(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (data ?? []).map((m: any) => ({
-        id: m.id,
-        name: m.name,
-        phone: m.phone,
-        role: m.role,
-        cellId: m.cell_id ?? null,
-        cellName: m.cells?.name ?? null,
-        missionName: m.missions?.name ?? null,
-        createdAt: m.created_at ?? null,
-      }))
-    )
+    const res = await fetch(`/api/admin/members?${params}`)
+    if (!res.ok) { setLoading(false); return }
+    const { members: data } = await res.json()
+    setMembers(data ?? [])
     setLoading(false)
-  }, [myRole, myMissionId, myCellId, search, roleFilter, supabase])
+  }, [search, roleFilter])
 
   useEffect(() => {
     if (initialized) load()
@@ -153,7 +146,7 @@ export default function MembersPage() {
         )}
       </div>
 
-      {/* 필터 영역 */}
+      {/* 필터 */}
       <div className="flex flex-col gap-2 mb-4">
         <input
           type="text"
@@ -181,33 +174,50 @@ export default function MembersPage() {
         </div>
       )}
 
-      {/* 목록 */}
+      {/* 카드 목록 */}
       {!loading && (
-        <div className="space-y-2">
+        <div className="space-y-3">
           {members.map((m) => (
             <button
               key={m.id}
               onClick={() => setDetail(m)}
-              className="w-full text-left bg-white rounded-2xl border border-gray-200 shadow-sm px-4 py-3 hover:bg-gray-50 active:bg-gray-100 transition-colors"
+              className="w-full text-left bg-white rounded-2xl border border-gray-200 shadow-sm p-4 hover:bg-gray-50 active:bg-gray-100 transition-colors"
             >
-              <div className="flex items-center justify-between gap-2">
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-bold text-gray-800 text-sm whitespace-nowrap">{m.name}</span>
-                    <span className={['text-[10px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap', ROLE_COLOR[m.role] ?? 'bg-gray-100 text-gray-600'].join(' ')}>
-                      {ROLE_LABEL[m.role] ?? m.role}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                    {m.cellName
-                      ? <span className="text-xs text-indigo-600 whitespace-nowrap">{m.cellName}</span>
-                      : <span className="text-xs text-gray-400 whitespace-nowrap">순 미배정</span>
-                    }
-                    {m.missionName && <span className="text-xs text-gray-400 whitespace-nowrap">· {m.missionName}</span>}
-                    {m.phone && <span className="text-xs text-gray-400 whitespace-nowrap">· {m.phone}</span>}
-                  </div>
+              {/* 이름 + 역할 뱃지 */}
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <div className="flex items-center gap-2 flex-wrap min-w-0">
+                  <span className="font-bold text-gray-900 text-base whitespace-nowrap">{m.name}</span>
+                  <span className={['text-[10px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap', ROLE_COLOR[m.role] ?? 'bg-gray-100 text-gray-600'].join(' ')}>
+                    {ROLE_LABEL[m.role] ?? m.role}
+                  </span>
                 </div>
-                <span className="text-gray-300 flex-shrink-0">›</span>
+                <span className="text-gray-300 flex-shrink-0 text-sm">›</span>
+              </div>
+
+              {/* 소속 정보 */}
+              <div className="flex items-center gap-1.5 flex-wrap mb-2">
+                {m.cellName
+                  ? <span className="text-xs text-indigo-600 whitespace-nowrap">{m.cellName}</span>
+                  : <span className="text-xs text-gray-400 whitespace-nowrap">순 미배정</span>
+                }
+                {m.missionName && (
+                  <span className="text-xs text-gray-400 whitespace-nowrap">· {m.missionName}</span>
+                )}
+              </div>
+
+              {/* 연락처 + 마지막 로그인 */}
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs text-gray-500 whitespace-nowrap">
+                  {m.phone ?? '연락처 없음'}
+                </span>
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  <span className="text-[10px] text-gray-400 whitespace-nowrap">
+                    최근 접속
+                  </span>
+                  <span className="text-[10px] font-medium text-indigo-500 whitespace-nowrap">
+                    {timeAgo(m.lastSignInAt)}
+                  </span>
+                </div>
               </div>
             </button>
           ))}
@@ -227,7 +237,6 @@ export default function MembersPage() {
             className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-5"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* 이름 + 역할 */}
             <div className="flex items-start justify-between mb-4">
               <div className="flex flex-col gap-1.5">
                 <p className="text-lg font-bold text-gray-900 whitespace-nowrap">{detail.name}</p>
@@ -238,20 +247,14 @@ export default function MembersPage() {
               <button onClick={() => setDetail(null)} className="text-gray-400 hover:text-gray-600 p-1 text-lg leading-none">✕</button>
             </div>
 
-            {/* 정보 행 */}
             <div className="mb-5">
               <InfoRow label="연락처" value={detail.phone ?? '—'} />
               <InfoRow label="소속 순" value={detail.cellName ?? '미배정'} />
               <InfoRow label="선교회" value={detail.missionName ?? '—'} />
-              <InfoRow
-                label="가입일"
-                value={detail.createdAt
-                  ? new Date(detail.createdAt).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })
-                  : '—'}
-              />
+              <InfoRow label="최근 접속" value={timeAgo(detail.lastSignInAt)} />
+              <InfoRow label="가입일" value={formatDate(detail.createdAt)} />
             </div>
 
-            {/* 버튼 */}
             <div className="flex gap-2">
               {canEditRole && (
                 <button
