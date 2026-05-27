@@ -87,29 +87,39 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: '예약 중 오류가 발생했습니다.' }, { status: 500 })
   }
 
-  // 예약 신청자에게 확정 알림톡 발송
-  const { data: requester } = await supabase
-    .from('profiles')
-    .select('phone, name')
-    .eq('id', user.id)
-    .single()
+  // 신청자 + 담당 교역자 정보 조회
+  const [{ data: requester }, { data: counselor }] = await Promise.all([
+    supabase.from('profiles').select('phone, name').eq('id', user.id).single(),
+    supabase.from('profiles').select('phone, name, counselor_title').eq('id', counselor_id).single(),
+  ])
 
+  const methodLabel: Record<string, string> = {
+    metaverse: '메타버스 채팅',
+    phone: '전화',
+    in_person: '대면',
+  }
+  const dateStr = new Date(scheduled_at).toLocaleString('ko-KR', {
+    month: 'long', day: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+    timeZone: 'Asia/Seoul',
+  })
+
+  // 예약 신청자에게 알림톡
   if (requester?.phone) {
-    const methodLabel: Record<string, string> = {
-      metaverse: '메타버스 채팅',
-      phone: '전화',
-      in_person: '대면',
-    }
-    const dateStr = new Date(scheduled_at).toLocaleString('ko-KR', {
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      timeZone: 'Asia/Seoul',
-    })
+    const counselorLabel = counselor?.counselor_title
+      ? `${counselor.name} ${counselor.counselor_title}`
+      : counselor?.name ?? '교역자'
     await sendAlimtalk(
       requester.phone,
-      `상담 예약이 접수되었습니다. 일시: ${dateStr} / 방법: ${methodLabel[method]} (확정 후 별도 안내드립니다)`
+      `상담 예약이 접수되었습니다.\n교역자: ${counselorLabel}\n일시: ${dateStr}\n방법: ${methodLabel[method]}\n(확정 후 별도 안내드립니다)`
+    )
+  }
+
+  // 담당 교역자에게 알림톡
+  if (counselor?.phone) {
+    await sendAlimtalk(
+      counselor.phone,
+      `새 상담 예약이 접수되었습니다.\n신청자: ${requester?.name ?? '성도'}\n일시: ${dateStr}\n방법: ${methodLabel[method]}${note ? `\n메모: ${note.slice(0, 50)}` : ''}`
     )
   }
 

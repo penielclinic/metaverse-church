@@ -15,6 +15,7 @@ interface Counselor {
   id: string
   name: string
   role: string
+  counselor_title: string | null
 }
 
 interface Props {
@@ -62,14 +63,18 @@ export default function CounselCalendar({ onClose, onSuccess }: Props) {
   useEffect(() => {
     supabase
       .from('profiles')
-      .select('id, name, role')
-      .in('role', ['pastor', 'youth_pastor'])
+      .select('id, name, role, counselor_title')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .eq('is_counselor' as any, true)
+      .order('name')
       .then(({ data }) => {
         if (data) {
-          setCounselors(data)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          setCounselors(data as any)
           if (data.length > 0) setSelectedCounselor(data[0].id)
         }
       })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // 선택된 교역자·날짜의 예약된 슬롯 로드
@@ -191,7 +196,7 @@ export default function CounselCalendar({ onClose, onSuccess }: Props) {
               >
                 {c.name}
                 <span className="ml-1 text-xs opacity-70">
-                  {c.role === 'pastor' ? '목사' : '선교회장'}
+                  {c.counselor_title ?? (c.role === 'pastor' ? '담임목사' : '교역자')}
                 </span>
               </button>
             ))}
