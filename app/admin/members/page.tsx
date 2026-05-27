@@ -11,6 +11,7 @@ interface Member {
   cellId: number | null
   cellName: string | null
   missionName: string | null
+  createdAt: string | null
 }
 
 const ROLE_LABEL: Record<string, string> = {
@@ -35,15 +36,26 @@ const ROLE_COLOR: Record<string, string> = {
 
 const ALL_ROLES = Object.keys(ROLE_LABEL)
 
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center gap-3 py-2 border-b border-gray-100 last:border-0">
+      <span className="text-xs text-gray-400 w-16 flex-shrink-0 whitespace-nowrap">{label}</span>
+      <span className="text-sm text-gray-800" style={{ wordBreak: 'keep-all' }}>{value}</span>
+    </div>
+  )
+}
+
 export default function MembersPage() {
   const supabase = createClient()
   const [members, setMembers] = useState<Member[]>([])
   const [search, setSearch] = useState('')
+  const [roleFilter, setRoleFilter] = useState('')
   const [loading, setLoading] = useState(true)
   const [myRole, setMyRole] = useState('')
   const [myMissionId, setMyMissionId] = useState<number | null>(null)
   const [myCellId, setMyCellId] = useState<number | null>(null)
   const [editing, setEditing] = useState<{ id: string; role: string; cellId: number | null } | null>(null)
+  const [detail, setDetail] = useState<Member | null>(null)
   const [cells, setCells] = useState<{ id: number; name: string }[]>([])
   const [saving, setSaving] = useState(false)
   const [initialized, setInitialized] = useState(false)
@@ -71,7 +83,7 @@ export default function MembersPage() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let q: any = supabase
       .from('profiles')
-      .select(`id, name, phone, role, cell_id, cells ( name ), missions ( name )`)
+      .select(`id, name, phone, role, cell_id, created_at, cells ( name ), missions ( name )`)
       .order('name')
 
     // 역할별 조회 범위 제한
@@ -83,9 +95,9 @@ export default function MembersPage() {
       const { data: m } = await supabase.from('missions').select('id').eq('name', '교회학교').single()
       q = q.eq('mission_id', m?.id)
     }
-    // pastor: 전체 조회 (필터 없음)
 
     if (search.trim()) q = q.ilike('name', `%${search.trim()}%`)
+    if (roleFilter) q = q.eq('role', roleFilter)
 
     const { data } = await q
     setMembers(
@@ -98,10 +110,11 @@ export default function MembersPage() {
         cellId: m.cell_id ?? null,
         cellName: m.cells?.name ?? null,
         missionName: m.missions?.name ?? null,
+        createdAt: m.created_at ?? null,
       }))
     )
     setLoading(false)
-  }, [myRole, myMissionId, myCellId, search, supabase])
+  }, [myRole, myMissionId, myCellId, search, roleFilter, supabase])
 
   useEffect(() => {
     if (initialized) load()
@@ -122,72 +135,143 @@ export default function MembersPage() {
       return
     }
     setEditing(null)
+    setDetail(null)
     load()
   }
 
-  // 역할 변경 권한: pastor만
   const canEditRole = myRole === 'pastor'
 
   return (
     <div className="px-4 py-6 max-w-screen-md mx-auto">
-      <h1 className="text-xl font-bold text-gray-800 mb-4">👤 성도 목록</h1>
+      {/* 헤더 */}
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-xl font-bold text-gray-800">👤 성도 목록</h1>
+        {!loading && (
+          <span className="text-sm text-gray-500">
+            총 <strong className="text-gray-800">{members.length}</strong>명
+          </span>
+        )}
+      </div>
 
-      <div className="flex gap-2 mb-4">
+      {/* 필터 영역 */}
+      <div className="flex flex-col gap-2 mb-4">
         <input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && load()}
-          placeholder="이름 검색..."
-          className="flex-1 bg-white border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
+          placeholder="이름으로 검색..."
+          className="w-full bg-white border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
         />
-        <button
-          onClick={() => load()}
-          className="px-4 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-semibold hover:bg-indigo-700 transition-colors"
+        <select
+          value={roleFilter}
+          onChange={(e) => setRoleFilter(e.target.value)}
+          className="w-full bg-white border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 text-gray-600"
         >
-          검색
-        </button>
+          <option value="">전체 역할</option>
+          {ALL_ROLES.map((r) => (
+            <option key={r} value={r}>{ROLE_LABEL[r]}</option>
+          ))}
+        </select>
       </div>
 
+      {/* 로딩 */}
       {loading && (
         <div className="flex justify-center py-16">
           <div className="w-8 h-8 border-4 border-indigo-400 border-t-transparent rounded-full animate-spin" />
         </div>
       )}
 
+      {/* 목록 */}
       {!loading && (
         <div className="space-y-2">
-          <p className="text-xs text-gray-400 mb-2">총 {members.length}명</p>
           {members.map((m) => (
-            <div key={m.id} className="bg-white rounded-2xl border border-gray-200 shadow-sm px-4 py-3">
+            <button
+              key={m.id}
+              onClick={() => setDetail(m)}
+              className="w-full text-left bg-white rounded-2xl border border-gray-200 shadow-sm px-4 py-3 hover:bg-gray-50 active:bg-gray-100 transition-colors"
+            >
               <div className="flex items-center justify-between gap-2">
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-bold text-gray-800 text-sm whitespace-nowrap">{m.name}</span>
                     <span className={['text-[10px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap', ROLE_COLOR[m.role] ?? 'bg-gray-100 text-gray-600'].join(' ')}>
                       {ROLE_LABEL[m.role] ?? m.role}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                    {m.cellName && <span className="text-xs text-indigo-600 whitespace-nowrap">{m.cellName}</span>}
+                  <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                    {m.cellName
+                      ? <span className="text-xs text-indigo-600 whitespace-nowrap">{m.cellName}</span>
+                      : <span className="text-xs text-gray-400 whitespace-nowrap">순 미배정</span>
+                    }
                     {m.missionName && <span className="text-xs text-gray-400 whitespace-nowrap">· {m.missionName}</span>}
-                    {!m.cellName && <span className="text-xs text-gray-400 whitespace-nowrap">순 미배정</span>}
+                    {m.phone && <span className="text-xs text-gray-400 whitespace-nowrap">· {m.phone}</span>}
                   </div>
                 </div>
-                {canEditRole && (
-                  <button
-                    onClick={() => setEditing({ id: m.id, role: m.role, cellId: m.cellId })}
-                    className="flex-shrink-0 text-xs px-3 py-1.5 rounded-full border border-gray-300 text-gray-600 hover:bg-gray-50 transition-colors whitespace-nowrap"
-                  >
-                    편집
-                  </button>
-                )}
+                <span className="text-gray-300 flex-shrink-0">›</span>
               </div>
-            </div>
+            </button>
           ))}
           {members.length === 0 && (
-            <div className="text-center py-12 text-gray-400 text-sm">검색 결과가 없습니다.</div>
+            <div className="text-center py-12 text-gray-400 text-sm">성도가 없습니다.</div>
           )}
+        </div>
+      )}
+
+      {/* 성도 상세 모달 */}
+      {detail && (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 px-4 pb-4 sm:pb-0"
+          onClick={() => setDetail(null)}
+        >
+          <div
+            className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* 이름 + 역할 */}
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex flex-col gap-1.5">
+                <p className="text-lg font-bold text-gray-900 whitespace-nowrap">{detail.name}</p>
+                <span className={['text-[11px] font-semibold px-2.5 py-0.5 rounded-full self-start whitespace-nowrap', ROLE_COLOR[detail.role] ?? 'bg-gray-100 text-gray-600'].join(' ')}>
+                  {ROLE_LABEL[detail.role] ?? detail.role}
+                </span>
+              </div>
+              <button onClick={() => setDetail(null)} className="text-gray-400 hover:text-gray-600 p-1 text-lg leading-none">✕</button>
+            </div>
+
+            {/* 정보 행 */}
+            <div className="mb-5">
+              <InfoRow label="연락처" value={detail.phone ?? '—'} />
+              <InfoRow label="소속 순" value={detail.cellName ?? '미배정'} />
+              <InfoRow label="선교회" value={detail.missionName ?? '—'} />
+              <InfoRow
+                label="가입일"
+                value={detail.createdAt
+                  ? new Date(detail.createdAt).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })
+                  : '—'}
+              />
+            </div>
+
+            {/* 버튼 */}
+            <div className="flex gap-2">
+              {canEditRole && (
+                <button
+                  onClick={() => {
+                    setDetail(null)
+                    setEditing({ id: detail.id, role: detail.role, cellId: detail.cellId })
+                  }}
+                  className="flex-1 py-3 rounded-xl bg-indigo-600 text-white text-sm font-semibold min-h-[44px] hover:bg-indigo-700 transition-colors"
+                >
+                  역할·순 편집
+                </button>
+              )}
+              <button
+                onClick={() => setDetail(null)}
+                className={['py-3 rounded-xl border border-gray-300 text-sm text-gray-600 min-h-[44px] hover:bg-gray-50 transition-colors', canEditRole ? 'px-5' : 'flex-1'].join(' ')}
+              >
+                닫기
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
