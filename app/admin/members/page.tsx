@@ -76,6 +76,8 @@ export default function MembersPage() {
   const [roleFilter, setRoleFilter] = useState('')
   const [loading, setLoading] = useState(true)
   const [myRole, setMyRole] = useState('')
+  const [myMissionId, setMyMissionId] = useState<number | null>(null)
+  const [myCellId, setMyCellId] = useState<number | null>(null)
   const [editing, setEditing] = useState<{ id: string; role: string; cellId: number | null } | null>(null)
   const [detail, setDetail] = useState<Member | null>(null)
   const [cells, setCells] = useState<{ id: number; name: string }[]>([])
@@ -87,8 +89,10 @@ export default function MembersPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { setLoading(false); return }
       const { data: profile } = await supabase
-        .from('profiles').select('role').eq('id', user.id).single()
+        .from('profiles').select('role, mission_id, cell_id').eq('id', user.id).single()
       setMyRole(profile?.role ?? 'member')
+      setMyMissionId(profile?.mission_id ?? null)
+      setMyCellId(profile?.cell_id ?? null)
       const { data: allCells } = await supabase.from('cells').select('id, name').order('id')
       setCells(allCells ?? [])
       setInitialized(true)
@@ -99,16 +103,42 @@ export default function MembersPage() {
 
   const load = useCallback(async () => {
     setLoading(true)
-    const params = new URLSearchParams()
-    if (search.trim()) params.set('search', search.trim())
-    if (roleFilter) params.set('role', roleFilter)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let q: any = supabase
+      .from('profiles')
+      .select(`id, name, phone, role, cell_id, created_at, cells ( name ), missions ( name )`)
+      .order('name')
 
-    const res = await fetch(`/api/admin/members?${params}`)
-    if (!res.ok) { setLoading(false); return }
-    const { members: data } = await res.json()
-    setMembers(data ?? [])
+    const role = myRole as string
+    if (role === 'cell_leader' || role === 'school_teacher') {
+      q = q.eq('cell_id', myCellId)
+    } else if (role === 'youth_pastor' || role === 'mission_leader') {
+      q = q.eq('mission_id', myMissionId)
+    } else if (role === 'school_pastor') {
+      const { data: m } = await supabase.from('missions').select('id').eq('name', '교회학교').single()
+      if (m) q = q.eq('mission_id', m.id)
+    }
+
+    if (search.trim()) q = q.ilike('name', `%${search.trim()}%`)
+    if (roleFilter) q = q.eq('role', roleFilter)
+
+    const { data } = await q
+    setMembers(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (data ?? []).map((m: any) => ({
+        id: m.id,
+        name: m.name,
+        phone: m.phone ?? null,
+        role: m.role,
+        cellId: m.cell_id ?? null,
+        cellName: m.cells?.name ?? null,
+        missionName: m.missions?.name ?? null,
+        createdAt: m.created_at ?? null,
+        lastSignInAt: null,
+      }))
+    )
     setLoading(false)
-  }, [search, roleFilter])
+  }, [myRole, myMissionId, myCellId, search, roleFilter, supabase])
 
   useEffect(() => {
     if (initialized) load()
