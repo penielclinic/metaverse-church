@@ -18,16 +18,25 @@ const REACTIONS: { type: ReactionType; emoji: string; label: string }[] = [
 ]
 
 export default function SanctuaryLive() {
+  const supabase = createClient()
   const [counts, setCounts] = useState<Record<ReactionType, number>>({
-    amen: 0,
-    clap: 0,
-    hallelujah: 0,
+    amen: 0, clap: 0, hallelujah: 0,
   })
   const [floaters, setFloaters] = useState<FloatingEmoji[]>([])
   const [liveVideoId, setLiveVideoId] = useState<string | null>(null)
   const [liveChecked, setLiveChecked] = useState(false)
+  const [userId, setUserId] = useState<string | null>(null)
   const idRef = useRef(0)
   const channelRef = useRef<ReturnType<ReturnType<typeof createClient>['channel']> | null>(null)
+  const viewRecordedRef = useRef(false)
+
+  // 로그인 유저 ID 캐시
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUserId(user?.id ?? null)
+    })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const addFloater = useCallback((emoji: string, x: number) => {
     const id = idRef.current++
@@ -48,8 +57,20 @@ export default function SanctuaryLive() {
       .catch(() => setLiveChecked(true))
   }, [])
 
+  // 라이브 영상이 있을 때 시청 기록 (하루 1회 upsert)
   useEffect(() => {
-    const supabase = createClient()
+    if (!liveVideoId || !userId || viewRecordedRef.current) return
+    viewRecordedRef.current = true
+    const today = new Date().toISOString().split('T')[0]
+    supabase.from('worship_views').upsert(
+      { user_id: userId, worship_date: today, youtube_id: liveVideoId },
+      { onConflict: 'user_id,worship_date' }
+    ).then(() => {/* 기록 완료 */})
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [liveVideoId, userId])
+
+  // Realtime 브로드캐스트 수신
+  useEffect(() => {
     const ch = supabase.channel('worship_reactions')
     channelRef.current = ch
 
@@ -64,6 +85,7 @@ export default function SanctuaryLive() {
       supabase.removeChannel(ch)
       channelRef.current = null
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [addFloater])
 
   const handleReaction = (type: ReactionType) => {
@@ -80,6 +102,17 @@ export default function SanctuaryLive() {
       event: 'reaction',
       payload: { type, x },
     })
+
+    // DB 저장 (로그인한 경우)
+    if (userId) {
+      const today = new Date().toISOString().split('T')[0]
+      supabase.from('worship_reactions').insert({
+        user_id: userId,
+        reaction: type,
+        worship_date: today,
+        youtube_id: liveVideoId,
+      }).then(() => {/* 저장 완료 */})
+    }
   }
 
   return (
@@ -108,7 +141,6 @@ export default function SanctuaryLive() {
               allowFullScreen
             />
           ) : (
-            /* 라이브 없을 때 placeholder */
             <div className="absolute inset-0 flex flex-col items-center justify-center text-white gap-3 px-4 text-center">
               <span className="text-6xl">⛪</span>
               {!liveChecked ? (
@@ -155,7 +187,6 @@ export default function SanctuaryLive() {
           ))}
         </div>
 
-        {/* 반응 안내 */}
         <p className="text-center text-xs text-gray-400" style={{ wordBreak: 'keep-all' }}>
           버튼을 눌러 예배에 함께 반응해요 · 다른 성도들과 실시간으로 공유됩니다
         </p>
