@@ -12,7 +12,6 @@ interface Member {
   cellName: string | null
   missionName: string | null
   createdAt: string | null
-  lastSignInAt: string | null
 }
 
 const ROLE_LABEL: Record<string, string> = {
@@ -38,21 +37,6 @@ const ROLE_COLOR: Record<string, string> = {
 
 const ALL_ROLES = Object.keys(ROLE_LABEL)
 
-function timeAgo(dateStr: string | null): string {
-  if (!dateStr) return '—'
-  const diff = Date.now() - new Date(dateStr).getTime()
-  const minutes = Math.floor(diff / 60000)
-  if (minutes < 1) return '방금'
-  if (minutes < 60) return `${minutes}분 전`
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours}시간 전`
-  const days = Math.floor(hours / 24)
-  if (days < 30) return `${days}일 전`
-  const months = Math.floor(days / 30)
-  if (months < 12) return `${months}개월 전`
-  return `${Math.floor(months / 12)}년 전`
-}
-
 function formatDate(dateStr: string | null): string {
   if (!dateStr) return '—'
   return new Date(dateStr).toLocaleDateString('ko-KR', {
@@ -74,6 +58,7 @@ export default function MembersPage() {
   const [search, setSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState('')
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
   const [myRole, setMyRole] = useState('')
   const [editing, setEditing] = useState<{ id: string; role: string; cellId: number | null } | null>(null)
   const [detail, setDetail] = useState<Member | null>(null)
@@ -82,63 +67,96 @@ export default function MembersPage() {
 
   useEffect(() => {
     async function load() {
-      const supabase = createClient()
+      try {
+        const supabase = createClient()
 
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { setLoading(false); return }
+        // 1. 현재 로그인 유저
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+          setLoadError('로그인이 필요합니다.')
+          setLoading(false)
+          return
+        }
 
-      const { data: profile } = await supabase
-        .from('profiles').select('role, mission_id, cell_id').eq('id', user.id).single()
+        // 2. 현재 유저의 역할
+        const { data: myProfile, error: profileError } = await supabase
+          .from('profiles')
+          .select('role, mission_id, cell_id')
+          .eq('id', user.id)
+          .single()
 
-      const role = (profile?.role ?? 'member') as string
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const missionId = (profile as any)?.mission_id ?? null
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const cellId = (profile as any)?.cell_id ?? null
-      setMyRole(role)
+        if (profileError) {
+          setLoadError(`프로필 조회 실패: ${profileError.message}`)
+          setLoading(false)
+          return
+        }
 
-      const { data: allCells } = await supabase.from('cells').select('id, name').order('id')
-      setCells(allCells ?? [])
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let q: any = supabase
-        .from('profiles')
-        .select('id, name, phone, role, cell_id, created_at, cells ( name ), missions ( name )')
-        .order('name')
-
-      if (role === 'cell_leader' || role === 'school_teacher') {
-        q = q.eq('cell_id', cellId)
-      } else if (role === 'youth_pastor' || role === 'mission_leader') {
-        q = q.eq('mission_id', missionId)
-      } else if (role === 'school_pastor') {
-        const { data: m } = await supabase.from('missions').select('id').eq('name', '교회학교').single()
-        if (m) q = q.eq('mission_id', m.id)
-      }
-
-      const { data, error } = await q
-      if (error) {
-        console.error('members load error:', error)
-        setLoading(false)
-        return
-      }
-
-      setAllMembers(
+        const role = (myProfile?.role ?? 'member') as string
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (data ?? []).map((m: any) => ({
-          id: m.id,
-          name: m.name,
-          phone: m.phone ?? null,
-          role: m.role,
-          cellId: m.cell_id ?? null,
+        const myMissionId = (myProfile as any)?.mission_id ?? null
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const myCellId = (myProfile as any)?.cell_id ?? null
+        setMyRole(role)
+
+        // 3. 셀·선교회 목록 (이름 매핑용)
+        const [{ data: cellsData }, { data: missionsData }] = await Promise.all([
+          supabase.from('cells').select('id, name'),
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          cellName: (m.cells as any)?.name ?? null,
+          (supabase as any).from('missions').select('id, name'),
+        ])
+        const cellMap = new Map<number, string>(
+          (cellsData ?? []).map((c: { id: number; name: string }) => [c.id, c.name])
+        )
+        const missionMap = new Map<number, string>(
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          missionName: (m.missions as any)?.name ?? null,
-          createdAt: m.created_at ?? null,
-          lastSignInAt: null,
+          (missionsData ?? []).map((m: any) => [m.id as number, m.name as string])
+        )
+        setCells(cellsData ?? [])
+
+        // 4. 성도 목록 조회 — 조인 없이 단순 쿼리
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        let q: any = supabase
+          .from('profiles')
+          .select('id, name, phone, role, cell_id, mission_id, created_at')
+          .order('name')
+
+        // 역할별 범위 제한
+        if (role === 'cell_leader' || role === 'school_teacher') {
+          q = q.eq('cell_id', myCellId)
+        } else if (role === 'youth_pastor' || role === 'mission_leader') {
+          q = q.eq('mission_id', myMissionId)
+        } else if (role === 'school_pastor') {
+          const { data: schoolMission } = await supabase
+            .from('missions').select('id').eq('name', '교회학교').single()
+          if (schoolMission) q = q.eq('mission_id', schoolMission.id)
+        }
+
+        const { data, error } = await q
+        if (error) {
+          setLoadError(`성도 조회 실패: ${error.message}`)
+          setLoading(false)
+          return
+        }
+
+        // 5. 이름 매핑
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const mapped: Member[] = (data ?? []).map((p: any) => ({
+          id: p.id,
+          name: p.name,
+          phone: p.phone ?? null,
+          role: p.role,
+          cellId: p.cell_id ?? null,
+          cellName: p.cell_id ? (cellMap.get(p.cell_id) ?? null) : null,
+          missionName: p.mission_id ? (missionMap.get(p.mission_id) ?? null) : null,
+          createdAt: p.created_at ?? null,
         }))
-      )
-      setLoading(false)
+
+        setAllMembers(mapped)
+      } catch (e) {
+        setLoadError(`예기치 못한 오류: ${String(e)}`)
+      } finally {
+        setLoading(false)
+      }
     }
 
     load()
@@ -173,16 +191,25 @@ export default function MembersPage() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data } = await (supabase as any)
       .from('profiles')
-      .select('id, name, phone, role, cell_id, created_at, cells ( name ), missions ( name )')
+      .select('id, name, phone, role, cell_id, mission_id, created_at')
       .order('name')
     if (data) {
+      const { data: cellsData } = await supabase.from('cells').select('id, name')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: missionsData } = await (supabase as any).from('missions').select('id, name')
+      const cellMap = new Map<number, string>(
+        (cellsData ?? []).map((c: { id: number; name: string }) => [c.id, c.name])
+      )
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const missionMap = new Map<number, string>((missionsData ?? []).map((m: any) => [m.id, m.name]))
       setAllMembers(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        data.map((m: any) => ({
-          id: m.id, name: m.name, phone: m.phone ?? null, role: m.role,
-          cellId: m.cell_id ?? null, cellName: m.cells?.name ?? null,
-          missionName: m.missions?.name ?? null, createdAt: m.created_at ?? null,
-          lastSignInAt: null,
+        data.map((p: any) => ({
+          id: p.id, name: p.name, phone: p.phone ?? null, role: p.role,
+          cellId: p.cell_id ?? null,
+          cellName: p.cell_id ? (cellMap.get(p.cell_id) ?? null) : null,
+          missionName: p.mission_id ? (missionMap.get(p.mission_id) ?? null) : null,
+          createdAt: p.created_at ?? null,
         }))
       )
     }
@@ -195,33 +222,42 @@ export default function MembersPage() {
       {/* 헤더 */}
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-xl font-bold text-gray-800">👤 성도 목록</h1>
-        {!loading && (
+        {!loading && !loadError && (
           <span className="text-sm text-gray-500">
             총 <strong className="text-gray-800">{members.length}</strong>명
           </span>
         )}
       </div>
 
+      {/* 에러 */}
+      {loadError && (
+        <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-4 text-sm text-red-600" style={{ wordBreak: 'keep-all' }}>
+          {loadError}
+        </div>
+      )}
+
       {/* 필터 */}
-      <div className="flex flex-col gap-2 mb-4">
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="이름으로 검색..."
-          className="w-full bg-white border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
-        />
-        <select
-          value={roleFilter}
-          onChange={(e) => setRoleFilter(e.target.value)}
-          className="w-full bg-white border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 text-gray-600"
-        >
-          <option value="">전체 역할</option>
-          {ALL_ROLES.map((r) => (
-            <option key={r} value={r}>{ROLE_LABEL[r]}</option>
-          ))}
-        </select>
-      </div>
+      {!loadError && (
+        <div className="flex flex-col gap-2 mb-4">
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="이름으로 검색..."
+            className="w-full bg-white border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
+          />
+          <select
+            value={roleFilter}
+            onChange={(e) => setRoleFilter(e.target.value)}
+            className="w-full bg-white border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 text-gray-600"
+          >
+            <option value="">전체 역할</option>
+            {ALL_ROLES.map((r) => (
+              <option key={r} value={r}>{ROLE_LABEL[r]}</option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {/* 로딩 */}
       {loading && (
@@ -231,7 +267,7 @@ export default function MembersPage() {
       )}
 
       {/* 카드 목록 */}
-      {!loading && (
+      {!loading && !loadError && (
         <div className="space-y-3">
           {members.map((m) => (
             <button
