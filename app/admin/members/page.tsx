@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 interface Member {
@@ -70,79 +70,87 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 }
 
 export default function MembersPage() {
-  const supabase = createClient()
-  const [members, setMembers] = useState<Member[]>([])
+  const [allMembers, setAllMembers] = useState<Member[]>([])
   const [search, setSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState('')
   const [loading, setLoading] = useState(true)
   const [myRole, setMyRole] = useState('')
-  const [myMissionId, setMyMissionId] = useState<number | null>(null)
-  const [myCellId, setMyCellId] = useState<number | null>(null)
   const [editing, setEditing] = useState<{ id: string; role: string; cellId: number | null } | null>(null)
   const [detail, setDetail] = useState<Member | null>(null)
   const [cells, setCells] = useState<{ id: number; name: string }[]>([])
   const [saving, setSaving] = useState(false)
-  const [initialized, setInitialized] = useState(false)
 
   useEffect(() => {
-    async function init() {
+    async function load() {
+      const supabase = createClient()
+
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { setLoading(false); return }
+
       const { data: profile } = await supabase
         .from('profiles').select('role, mission_id, cell_id').eq('id', user.id).single()
-      setMyRole(profile?.role ?? 'member')
-      setMyMissionId(profile?.mission_id ?? null)
-      setMyCellId(profile?.cell_id ?? null)
+
+      const role = (profile?.role ?? 'member') as string
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const missionId = (profile as any)?.mission_id ?? null
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const cellId = (profile as any)?.cell_id ?? null
+      setMyRole(role)
+
       const { data: allCells } = await supabase.from('cells').select('id, name').order('id')
       setCells(allCells ?? [])
-      setInitialized(true)
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let q: any = supabase
+        .from('profiles')
+        .select('id, name, phone, role, cell_id, created_at, cells ( name ), missions ( name )')
+        .order('name')
+
+      if (role === 'cell_leader' || role === 'school_teacher') {
+        q = q.eq('cell_id', cellId)
+      } else if (role === 'youth_pastor' || role === 'mission_leader') {
+        q = q.eq('mission_id', missionId)
+      } else if (role === 'school_pastor') {
+        const { data: m } = await supabase.from('missions').select('id').eq('name', '교회학교').single()
+        if (m) q = q.eq('mission_id', m.id)
+      }
+
+      const { data, error } = await q
+      if (error) {
+        console.error('members load error:', error)
+        setLoading(false)
+        return
+      }
+
+      setAllMembers(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (data ?? []).map((m: any) => ({
+          id: m.id,
+          name: m.name,
+          phone: m.phone ?? null,
+          role: m.role,
+          cellId: m.cell_id ?? null,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          cellName: (m.cells as any)?.name ?? null,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          missionName: (m.missions as any)?.name ?? null,
+          createdAt: m.created_at ?? null,
+          lastSignInAt: null,
+        }))
+      )
+      setLoading(false)
     }
-    init()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+
+    load()
   }, [])
 
-  const load = useCallback(async () => {
-    setLoading(true)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let q: any = supabase
-      .from('profiles')
-      .select(`id, name, phone, role, cell_id, created_at, cells ( name ), missions ( name )`)
-      .order('name')
-
-    const role = myRole as string
-    if (role === 'cell_leader' || role === 'school_teacher') {
-      q = q.eq('cell_id', myCellId)
-    } else if (role === 'youth_pastor' || role === 'mission_leader') {
-      q = q.eq('mission_id', myMissionId)
-    } else if (role === 'school_pastor') {
-      const { data: m } = await supabase.from('missions').select('id').eq('name', '교회학교').single()
-      if (m) q = q.eq('mission_id', m.id)
-    }
-
-    if (search.trim()) q = q.ilike('name', `%${search.trim()}%`)
-    if (roleFilter) q = q.eq('role', roleFilter)
-
-    const { data } = await q
-    setMembers(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (data ?? []).map((m: any) => ({
-        id: m.id,
-        name: m.name,
-        phone: m.phone ?? null,
-        role: m.role,
-        cellId: m.cell_id ?? null,
-        cellName: m.cells?.name ?? null,
-        missionName: m.missions?.name ?? null,
-        createdAt: m.created_at ?? null,
-        lastSignInAt: null,
-      }))
-    )
-    setLoading(false)
-  }, [myRole, myMissionId, myCellId, search, roleFilter, supabase])
-
-  useEffect(() => {
-    if (initialized) load()
-  }, [initialized, load])
+  // 클라이언트 사이드 필터링
+  const members = useMemo(() => {
+    let list = allMembers
+    if (search.trim()) list = list.filter(m => m.name.includes(search.trim()))
+    if (roleFilter) list = list.filter(m => m.role === roleFilter)
+    return list
+  }, [allMembers, search, roleFilter])
 
   const saveEdit = async () => {
     if (!editing) return
@@ -160,7 +168,24 @@ export default function MembersPage() {
     }
     setEditing(null)
     setDetail(null)
-    load()
+    // 저장 후 재로드
+    const supabase = createClient()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data } = await (supabase as any)
+      .from('profiles')
+      .select('id, name, phone, role, cell_id, created_at, cells ( name ), missions ( name )')
+      .order('name')
+    if (data) {
+      setAllMembers(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        data.map((m: any) => ({
+          id: m.id, name: m.name, phone: m.phone ?? null, role: m.role,
+          cellId: m.cell_id ?? null, cellName: m.cells?.name ?? null,
+          missionName: m.missions?.name ?? null, createdAt: m.created_at ?? null,
+          lastSignInAt: null,
+        }))
+      )
+    }
   }
 
   const canEditRole = myRole === 'pastor'
@@ -214,7 +239,6 @@ export default function MembersPage() {
               onClick={() => setDetail(m)}
               className="w-full text-left bg-white rounded-2xl border border-gray-200 shadow-sm p-4 hover:bg-gray-50 active:bg-gray-100 transition-colors"
             >
-              {/* 이름 + 역할 뱃지 */}
               <div className="flex items-center justify-between gap-2 mb-2">
                 <div className="flex items-center gap-2 flex-wrap min-w-0">
                   <span className="font-bold text-gray-900 text-base whitespace-nowrap">{m.name}</span>
@@ -225,7 +249,6 @@ export default function MembersPage() {
                 <span className="text-gray-300 flex-shrink-0 text-sm">›</span>
               </div>
 
-              {/* 소속 정보 */}
               <div className="flex items-center gap-1.5 flex-wrap mb-2">
                 {m.cellName
                   ? <span className="text-xs text-indigo-600 whitespace-nowrap">{m.cellName}</span>
@@ -236,19 +259,13 @@ export default function MembersPage() {
                 )}
               </div>
 
-              {/* 연락처 + 마지막 로그인 */}
               <div className="flex items-center justify-between gap-2">
                 <span className="text-xs text-gray-500 whitespace-nowrap">
                   {m.phone ?? '연락처 없음'}
                 </span>
-                <div className="flex items-center gap-1 flex-shrink-0">
-                  <span className="text-[10px] text-gray-400 whitespace-nowrap">
-                    최근 접속
-                  </span>
-                  <span className="text-[10px] font-medium text-indigo-500 whitespace-nowrap">
-                    {timeAgo(m.lastSignInAt)}
-                  </span>
-                </div>
+                <span className="text-xs text-gray-400 whitespace-nowrap">
+                  가입 {formatDate(m.createdAt)}
+                </span>
               </div>
             </button>
           ))}
@@ -282,7 +299,6 @@ export default function MembersPage() {
               <InfoRow label="연락처" value={detail.phone ?? '—'} />
               <InfoRow label="소속 순" value={detail.cellName ?? '미배정'} />
               <InfoRow label="선교회" value={detail.missionName ?? '—'} />
-              <InfoRow label="최근 접속" value={timeAgo(detail.lastSignInAt)} />
               <InfoRow label="가입일" value={formatDate(detail.createdAt)} />
             </div>
 
