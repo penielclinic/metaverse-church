@@ -165,7 +165,7 @@ export default function FamilyEvents({ myUserId }: { myUserId: string }) {
           {selectedEvents.length === 0 ? (
             <p className="text-xs text-slate-500">해당 날짜에 경조사가 없습니다.</p>
           ) : selectedEvents.map(e => (
-            <EventCard key={e.id} e={e} myUserId={myUserId} onAttend={attend} />
+            <EventCard key={e.id} e={e} onAttend={attend} />
           ))}
         </div>
       )}
@@ -177,7 +177,7 @@ export default function FamilyEvents({ myUserId }: { myUserId: string }) {
           <p className="text-center text-sm text-slate-500 py-4" style={{ wordBreak: 'keep-all' }}>등록된 경조사가 없습니다.</p>
         ) : events.map(e => (
           <div key={e.id} className="mb-2">
-            <EventCard e={e} myUserId={myUserId} onAttend={attend} />
+            <EventCard e={e} onAttend={attend} />
           </div>
         ))}
       </div>
@@ -185,7 +185,7 @@ export default function FamilyEvents({ myUserId }: { myUserId: string }) {
   )
 }
 
-function EventCard({ e, myUserId, onAttend }: { e: Event; myUserId: string; onAttend: (id: number) => void }) {
+function EventCard({ e, onAttend }: { e: Event; onAttend: (id: number) => void }) {
   return (
     <div className="p-3 rounded-xl" style={{ background: 'rgba(30,27,75,0.6)', border: '1px solid rgba(251,191,36,0.15)' }}>
       <div className="flex items-center gap-2">

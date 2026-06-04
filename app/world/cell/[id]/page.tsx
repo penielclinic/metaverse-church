@@ -513,85 +513,85 @@ export default function CellRoomPage() {
   return (
     <div className="relative overflow-hidden select-none" style={{ height: 'calc(100vh - 56px)' }}>
 
-      {/* ══ 럭셔리 응접실 배경 ══════════════════════════════════ */}
+      {/* ══ 밝은 모임방 배경 ══════════════════════════════════ */}
       <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 0 }}>
         {/* 천장 */}
         <div className="absolute top-0 left-0 right-0"
-          style={{ height: '13%', background: 'linear-gradient(180deg,#060302 0%,#1a0e07 100%)' }} />
-        {/* 천장 샹들리에 빛 */}
+          style={{ height: '13%', background: 'linear-gradient(180deg,#f5f0e8 0%,#ede5d8 100%)' }} />
+        {/* 천장 조명 */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2"
-          style={{ width: '70%', height: '55%', background: 'radial-gradient(ellipse at 50% 0%,rgba(255,210,110,0.22) 0%,rgba(255,180,60,0.06) 45%,transparent 70%)' }} />
+          style={{ width: '70%', height: '55%', background: 'radial-gradient(ellipse at 50% 0%,rgba(255,230,180,0.35) 0%,rgba(255,220,160,0.1) 45%,transparent 70%)' }} />
         {/* 뒷벽 */}
         <div className="absolute left-0 right-0"
-          style={{ top: '13%', bottom: '20%', background: 'linear-gradient(180deg,#6b3d1a 0%,#a8703a 20%,#c9956a 45%,#d4a574 65%,#b8845a 85%,#8b5e3c 100%)' }} />
-        {/* 벽 나뭇결 세로줄 */}
-        <div className="absolute left-0 right-0" style={{ top: '13%', bottom: '20%', opacity: 0.05,
-          backgroundImage: 'repeating-linear-gradient(90deg,transparent,transparent 55px,rgba(0,0,0,0.8) 56px)',
+          style={{ top: '13%', bottom: '20%', background: 'linear-gradient(180deg,#f7f2ea 0%,#f0e8db 20%,#ece3d4 45%,#f2ebe0 65%,#ede4d6 85%,#e8dece 100%)' }} />
+        {/* 벽 세로 텍스처 */}
+        <div className="absolute left-0 right-0" style={{ top: '13%', bottom: '20%', opacity: 0.04,
+          backgroundImage: 'repeating-linear-gradient(90deg,transparent,transparent 55px,rgba(0,0,0,0.5) 56px)',
           backgroundSize: '56px 100%' }} />
         {/* 걸레받이 */}
         <div className="absolute left-0 right-0"
-          style={{ bottom: '20%', height: '2.5%', background: 'linear-gradient(180deg,#4a2810,#2a1608)' }} />
+          style={{ bottom: '20%', height: '2.5%', background: 'linear-gradient(180deg,#c9b896,#b8a582)' }} />
         {/* 바닥 */}
         <div className="absolute bottom-0 left-0 right-0"
-          style={{ height: '20%', background: 'linear-gradient(180deg,#3a1e08 0%,#1e0f04 60%,#0d0602 100%)' }} />
+          style={{ height: '20%', background: 'linear-gradient(180deg,#dfd3be 0%,#d4c6ad 60%,#c9b99e 100%)' }} />
         {/* 바닥 마루 패턴 */}
-        <div className="absolute bottom-0 left-0 right-0" style={{ height: '20%', opacity: 0.12,
-          backgroundImage: 'repeating-linear-gradient(90deg,transparent,transparent 35px,rgba(255,255,255,0.4) 36px)',
+        <div className="absolute bottom-0 left-0 right-0" style={{ height: '20%', opacity: 0.08,
+          backgroundImage: 'repeating-linear-gradient(90deg,transparent,transparent 35px,rgba(0,0,0,0.3) 36px)',
           backgroundSize: '36px 100%' }} />
         {/* 왼쪽 측벽 */}
         <div className="absolute left-0" style={{ top: '13%', bottom: '20%', width: '13%',
-          background: 'linear-gradient(to right,#1a0a04,#7a4d22)',
+          background: 'linear-gradient(to right,#e0d5c2,#ece3d4)',
           clipPath: 'polygon(0 0,100% 12%,100% 88%,0 100%)' }} />
         {/* 오른쪽 측벽 */}
         <div className="absolute right-0" style={{ top: '13%', bottom: '20%', width: '13%',
-          background: 'linear-gradient(to left,#1a0a04,#7a4d22)',
+          background: 'linear-gradient(to left,#e0d5c2,#ece3d4)',
           clipPath: 'polygon(0 12%,100% 0,100% 100%,0 88%)' }} />
         {/* 천장-벽 경계선 */}
         <div className="absolute left-0 right-0" style={{ top: '13%', height: '1px',
-          background: 'linear-gradient(90deg,transparent 4%,rgba(210,170,90,0.5) 12%,rgba(230,190,100,0.85) 50%,rgba(210,170,90,0.5) 88%,transparent 96%)' }} />
+          background: 'linear-gradient(90deg,transparent 4%,rgba(200,180,140,0.5) 12%,rgba(210,190,150,0.7) 50%,rgba(200,180,140,0.5) 88%,transparent 96%)' }} />
         {/* 벽-바닥 경계선 */}
         <div className="absolute left-0 right-0" style={{ bottom: '22.5%', height: '1px',
-          background: 'linear-gradient(90deg,transparent 4%,rgba(180,130,70,0.4) 12%,rgba(200,150,80,0.7) 50%,rgba(180,130,70,0.4) 88%,transparent 96%)' }} />
-        {/* 전체 비네팅 */}
+          background: 'linear-gradient(90deg,transparent 4%,rgba(180,160,120,0.4) 12%,rgba(190,170,130,0.6) 50%,rgba(180,160,120,0.4) 88%,transparent 96%)' }} />
+        {/* 가장자리 그림자 */}
         <div className="absolute inset-0"
-          style={{ background: 'radial-gradient(ellipse 85% 75% at 50% 42%,transparent 35%,rgba(0,0,0,0.7) 100%)' }} />
+          style={{ background: 'radial-gradient(ellipse 85% 75% at 50% 42%,transparent 45%,rgba(0,0,0,0.12) 100%)' }} />
       </div>
 
       {/* ══ 상단 헤더 ══════════════════════════════════════════ */}
       <div className="absolute top-0 left-0 right-0 flex items-center gap-3 px-4 py-3"
-        style={{ zIndex: 10, background: 'rgba(8,4,2,0.8)', backdropFilter: 'blur(14px)', borderBottom: '1px solid rgba(200,160,80,0.18)' }}>
+        style={{ zIndex: 10, background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(14px)', borderBottom: '1px solid rgba(180,160,120,0.3)' }}>
         <button onClick={() => router.push('/world/cell')}
-          className="w-9 h-9 flex items-center justify-center rounded-full text-amber-400 hover:bg-amber-400/10 transition-colors text-lg flex-shrink-0"
+          className="w-9 h-9 flex items-center justify-center rounded-full text-amber-700 hover:bg-amber-100 transition-colors text-lg flex-shrink-0"
           aria-label="뒤로">←</button>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
-            <h1 className="font-bold text-amber-100 text-sm truncate">✨ {cellName}</h1>
+            <h1 className="font-bold text-amber-900 text-sm truncate">✨ {cellName}</h1>
             {isLive && (
               <span className="flex-shrink-0 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-red-600/90 text-white text-[9px] font-bold animate-pulse">
                 <span className="w-1 h-1 rounded-full bg-white" />LIVE
               </span>
             )}
           </div>
-          <p className="text-[11px] text-amber-400/60">{members.length}명 접속 중</p>
+          <p className="text-[11px] text-amber-700/60">{members.length}명 접속 중</p>
         </div>
         {/* 접속자 미니 아바타 */}
         <div className="flex -space-x-2">
           {members.slice(0, 4).map(m => (
             <button key={m.userId}
               onClick={() => setProfileCard(profileCard?.userId === m.userId ? null : m)}
-              className="w-8 h-8 rounded-full overflow-hidden border-2 border-slate-800 hover:border-amber-400 transition-colors flex-shrink-0">
+              className="w-8 h-8 rounded-full overflow-hidden border-2 border-amber-200 hover:border-amber-500 transition-colors flex-shrink-0">
               <AvatarPreview skinTone={m.skinTone} gender={m.gender} hairStyle={m.hairStyle} outfit={m.outfit} size={32} faceOnly />
             </button>
           ))}
           {members.length > 4 && (
-            <div className="w-8 h-8 rounded-full bg-slate-800 border-2 border-slate-700 flex items-center justify-center text-[9px] text-amber-400 font-bold">
+            <div className="w-8 h-8 rounded-full bg-amber-100 border-2 border-amber-200 flex items-center justify-center text-[9px] text-amber-700 font-bold">
               +{members.length - 4}
             </div>
           )}
         </div>
         {isLeader && (
           <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold flex-shrink-0"
-            style={{ background: 'rgba(251,191,36,0.2)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.35)' }}>순장</span>
+            style={{ background: 'rgba(180,120,30,0.15)', color: '#92400e', border: '1px solid rgba(180,120,30,0.3)' }}>순장</span>
         )}
       </div>
 
@@ -605,9 +605,9 @@ export default function CellRoomPage() {
           {/* 방 이름 명패 */}
           <div className="flex items-center justify-center mb-5">
             <div className="px-5 py-2 rounded-full text-center"
-              style={{ background: 'linear-gradient(135deg,rgba(60,35,10,0.9),rgba(90,55,15,0.85))', border: '1px solid rgba(210,170,80,0.5)', boxShadow: '0 2px 12px rgba(0,0,0,0.5), inset 0 1px 0 rgba(210,170,80,0.2)' }}>
-              <p className="text-amber-300 font-bold text-xs tracking-widest" style={{ wordBreak: 'keep-all' }}>
-                {cellName} 모임방
+              style={{ background: 'linear-gradient(135deg,rgba(255,255,255,0.9),rgba(245,240,230,0.95))', border: '1px solid rgba(180,150,100,0.4)', boxShadow: '0 2px 12px rgba(0,0,0,0.08)' }}>
+              <p className="text-amber-800 font-bold text-xs tracking-widest" style={{ wordBreak: 'keep-all' }}>
+                {cellName.includes('모임방') ? cellName : `${cellName} 모임방`}
               </p>
             </div>
           </div>
@@ -625,19 +625,18 @@ export default function CellRoomPage() {
                   className="relative flex flex-col items-center justify-center gap-1.5 rounded-xl transition-all duration-150 active:scale-95"
                   style={{
                     aspectRatio: '1',
-                    background: `linear-gradient(145deg, rgba(18,10,4,0.88) 0%, rgba(35,20,8,0.75) 100%)`,
-                    border: `1.5px solid ${board.accent}50`,
+                    background: `linear-gradient(145deg, rgba(255,255,255,0.92) 0%, rgba(250,245,235,0.88) 100%)`,
+                    border: `1.5px solid ${board.accent}60`,
                     boxShadow: [
-                      `0 6px 20px rgba(0,0,0,0.55)`,
-                      `0 1px 0 ${board.accent}30 inset`,
-                      `0 -1px 0 rgba(0,0,0,0.4) inset`,
+                      `0 4px 12px rgba(0,0,0,0.08)`,
+                      `0 1px 0 ${board.accent}20 inset`,
                       isTimerActive ? `0 0 14px ${board.glow}` : '',
                     ].filter(Boolean).join(','),
                   }}
                 >
                   {/* 상단 걸이 핀 */}
                   <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 flex gap-3">
-                    <div className="w-2 h-3 rounded-full" style={{ background: `linear-gradient(180deg,${board.accent},${board.accent}80)`, boxShadow: `0 2px 4px rgba(0,0,0,0.5)` }} />
+                    <div className="w-2 h-3 rounded-full" style={{ background: `linear-gradient(180deg,${board.accent},${board.accent}80)`, boxShadow: `0 2px 4px rgba(0,0,0,0.15)` }} />
                   </div>
 
                   {/* 알림 배지 */}
@@ -675,7 +674,7 @@ export default function CellRoomPage() {
           </div>
 
           {/* 하단 힌트 텍스트 */}
-          <p className="text-center text-[10px] mt-4" style={{ color: 'rgba(200,160,80,0.4)' }}>
+          <p className="text-center text-[10px] mt-4" style={{ color: 'rgba(140,110,60,0.5)' }}>
             보드를 눌러 기능을 열어보세요
           </p>
         </div>
@@ -684,18 +683,18 @@ export default function CellRoomPage() {
       {/* ══ 프로필 카드 팝업 ══════════════════════════════════ */}
       {profileCard && (
         <div className="absolute left-4 right-4 px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-3"
-          style={{ zIndex: 20, bottom: 20, background: 'rgba(8,4,2,0.96)', border: '1px solid rgba(200,160,80,0.4)', boxShadow: '0 -4px 30px rgba(0,0,0,0.6)' }}>
+          style={{ zIndex: 20, bottom: 20, background: 'rgba(255,255,255,0.97)', border: '1px solid rgba(180,150,100,0.3)', boxShadow: '0 -4px 20px rgba(0,0,0,0.1)' }}>
           <div className="w-12 h-12 rounded-full bg-slate-700 border-2 overflow-hidden flex-shrink-0"
             style={{ borderColor: 'rgba(251,191,36,0.5)' }}>
             <AvatarPreview skinTone={profileCard.skinTone} gender={profileCard.gender} hairStyle={profileCard.hairStyle} outfit={profileCard.outfit} size={48} faceOnly />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-bold text-amber-100 text-sm whitespace-nowrap">{profileCard.name}</p>
+            <p className="font-bold text-amber-900 text-sm whitespace-nowrap">{profileCard.name}</p>
             {profileCard.titles.length > 0 ? (
               <div className="flex flex-wrap gap-1 mt-1">
                 {profileCard.titles.map(t => (
                   <span key={t} className="text-[10px] px-2 py-0.5 rounded-full font-medium whitespace-nowrap"
-                    style={{ background: 'rgba(251,191,36,0.15)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.3)' }}>{t}</span>
+                    style={{ background: 'rgba(180,120,30,0.12)', color: '#92400e', border: '1px solid rgba(180,120,30,0.25)' }}>{t}</span>
                 ))}
               </div>
             ) : <p className="text-xs text-slate-500 mt-0.5">직분 미설정</p>}
