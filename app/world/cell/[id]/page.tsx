@@ -18,7 +18,7 @@ import CellAlbum from '@/components/cell/album/CellAlbum'
 import JoinRequests from '@/components/cell/JoinRequests'
 // 장로 모임방 전용 9종
 import PrayerRelay from '@/components/cell/elder/PrayerRelay'
-import ReadingProgress from '@/components/cell/elder/ReadingProgress'
+import FaithTestimony from '@/components/cell/elder/FaithTestimony'
 import FamilyEvents from '@/components/cell/elder/FamilyEvents'
 import WellbeingCheck from '@/components/cell/elder/WellbeingCheck'
 import GratitudeWall from '@/components/cell/elder/GratitudeWall'
@@ -39,7 +39,7 @@ interface CellNote {
   id: number; userId: string; authorName: string; content: string; color: string; createdAt: string
 }
 type DrawerKey = 'word' | 'chat' | 'attendance' | 'prayer' | 'notice' | 'board' | 'timer' | 'mvp' | 'album' | 'requests'
-  | 'elder_prayer' | 'elder_reading' | 'elder_events' | 'elder_wellbeing' | 'elder_gratitude' | 'elder_reco' | 'elder_care' | 'elder_announce' | 'elder_help'
+  | 'elder_prayer' | 'elder_testimony' | 'elder_events' | 'elder_wellbeing' | 'elder_gratitude' | 'elder_reco' | 'elder_care' | 'elder_announce' | 'elder_help'
 
 // ── 쪽지 스타일 ───────────────────────────────────────────────
 const NOTE_COLORS = [
@@ -112,7 +112,7 @@ const LEADER_BOARD = { key: 'requests' as DrawerKey, icon: '📋', label: '신�
 // 장로 모임방 전용 보드 9종
 const ELDER_BOARDS: typeof BASE_BOARDS = [
   { key: 'elder_prayer',    icon: '🙏', label: '중보기도\n릴레이', accent: '#A78BFA', glow: 'rgba(167,139,250,0.35)' },
-  { key: 'elder_reading',   icon: '📖', label: '성경\n통독',       accent: '#6EE7B7', glow: 'rgba(110,231,183,0.35)' },
+  { key: 'elder_testimony', icon: '✝️', label: '신앙\n간증',       accent: '#C4B5FD', glow: 'rgba(196,181,253,0.35)' },
   { key: 'elder_events',    icon: '📅', label: '경조사\n달력',     accent: '#F9A8D4', glow: 'rgba(249,168,212,0.35)' },
   { key: 'elder_wellbeing', icon: '❤️‍🩹', label: '안부\n건강',      accent: '#FCA5A5', glow: 'rgba(252,165,165,0.35)' },
   { key: 'elder_gratitude', icon: '🙌', label: '감사\n나눔',       accent: '#FDE68A', glow: 'rgba(253,230,138,0.35)' },
@@ -167,7 +167,7 @@ export default function CellRoomPage() {
         const counts: Record<string, number> = {}
         const queries: [string, string, Record<string, unknown>?][] = [
           ['elder_prayer', 'elder_prayer_targets', { is_active: true }],
-          ['elder_reading', 'elder_reading_progress'],
+          ['elder_testimony', 'elder_testimonies'],
           ['elder_events', 'elder_family_events'],
           ['elder_wellbeing', 'elder_care_subjects'],
           ['elder_gratitude', 'elder_gratitude_posts'],
@@ -404,8 +404,8 @@ export default function CellRoomPage() {
       // 장로 모임방 전용 9종
       case 'elder_prayer':
         return <div className="flex-1 overflow-y-auto p-4 pb-8"><PrayerRelay myUserId={myUserId} /></div>
-      case 'elder_reading':
-        return <div className="flex-1 overflow-y-auto p-4 pb-8"><ReadingProgress myUserId={myUserId} /></div>
+      case 'elder_testimony':
+        return <div className="flex-1 overflow-y-auto p-4 pb-8"><FaithTestimony myUserId={myUserId} /></div>
       case 'elder_events':
         return <div className="flex-1 overflow-y-auto p-4 pb-8"><FamilyEvents myUserId={myUserId} /></div>
       case 'elder_wellbeing':
@@ -503,7 +503,7 @@ export default function CellRoomPage() {
   }
 
   const BOARDS = [
-    ...BASE_BOARDS,
+    ...(isElderRoom ? BASE_BOARDS.filter(b => b.key !== 'word' && b.key !== 'timer') : BASE_BOARDS),
     ...(isElderRoom ? ELDER_BOARDS : []),
     ...(isLeader ? [LEADER_BOARD] : []),
   ]
