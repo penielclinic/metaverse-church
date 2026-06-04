@@ -9,6 +9,7 @@ const ADMIN_ROLES = ['pastor', 'elder', 'school_pastor', 'mission_leader', 'yout
 
 const NAV = [
   { href: '/admin',           label: '대시보드', emoji: '📊' },
+  { href: '/admin/notices',   label: '공지사항', emoji: '📢' },
   { href: '/admin/requests',  label: '순 신청',  emoji: '📋' },
   { href: '/admin/members',   label: '성도 목록', emoji: '👤' },
   { href: '/admin/cells',     label: '순/반 목록', emoji: '👥' },
