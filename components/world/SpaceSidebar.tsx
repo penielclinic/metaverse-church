@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { SPACES } from '@/lib/spaces'
 import { useWorldStore } from '@/store/worldStore'
@@ -8,6 +9,9 @@ export default function SpaceSidebar() {
   const pathname = usePathname()
   const router = useRouter()
   const { setCurrentSpace, getSpaceUserCount } = useWorldStore()
+  const [showPwModal, setShowPwModal] = useState(false)
+  const [pw, setPw] = useState('')
+  const [pwError, setPwError] = useState(false)
 
   const handleEnter = (slug: string, name: string, path: string, disabled?: boolean) => {
     if (disabled) return
@@ -76,6 +80,19 @@ export default function SpaceSidebar() {
               </button>
             )
           })}
+
+          {/* 구분선 */}
+          <div className="my-1 mx-2 h-px bg-gray-100" />
+
+          {/* 관리자 페이지 */}
+          <button
+            onClick={() => setShowPwModal(true)}
+            title="관리자 페이지"
+            className="flex flex-col items-center gap-1 py-2.5 px-1 rounded-xl hover:bg-red-50 text-gray-500 hover:text-red-600 cursor-pointer transition-all text-center"
+          >
+            <span className="text-2xl leading-none">🔒</span>
+            <span className="text-[10px] font-semibold leading-tight whitespace-nowrap">관리자</span>
+          </button>
         </nav>
       </aside>
 
@@ -131,6 +148,49 @@ export default function SpaceSidebar() {
           })}
         </div>
       </nav>
+
+      {/* ── 관리자 페이지 비밀번호 모달 ── */}
+      {showPwModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => { setShowPwModal(false); setPw(''); setPwError(false) }}>
+          <div className="bg-white rounded-2xl shadow-xl p-6 w-72 space-y-4" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-center font-bold text-gray-800" style={{ wordBreak: 'keep-all' }}>관리자 비밀번호 입력</h3>
+            <input
+              type="password"
+              inputMode="numeric"
+              maxLength={4}
+              value={pw}
+              onChange={(e) => { setPw(e.target.value); setPwError(false) }}
+              placeholder="비밀번호 4자리"
+              className="w-full border border-gray-300 rounded-xl px-4 py-3 text-center text-lg tracking-widest focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  if (pw === '0000') { setShowPwModal(false); setPw(''); router.push('/admin') }
+                  else setPwError(true)
+                }
+              }}
+            />
+            {pwError && <p className="text-xs text-red-500 text-center">비밀번호가 틀렸습니다</p>}
+            <div className="flex gap-2">
+              <button
+                onClick={() => { setShowPwModal(false); setPw(''); setPwError(false) }}
+                className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-600 font-semibold"
+              >
+                취소
+              </button>
+              <button
+                onClick={() => {
+                  if (pw === '0000') { setShowPwModal(false); setPw(''); router.push('/admin') }
+                  else setPwError(true)
+                }}
+                className="flex-1 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-semibold"
+              >
+                확인
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }

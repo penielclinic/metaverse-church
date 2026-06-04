@@ -52,7 +52,7 @@ export default function AdminDashboard() {
 
       // 성도 수 (pastor만)
       let memberCount = 0
-      if (role === 'pastor') {
+      if (role === 'pastor' || role === 'elder') {
         const { count } = await supabase.from('profiles').select('id', { count: 'exact', head: true })
         memberCount = count ?? 0
       }
@@ -78,7 +78,7 @@ export default function AdminDashboard() {
     { label: '미처리 신청', value: stats.pendingCount, emoji: '📋', href: '/admin/requests', highlight: stats.pendingCount > 0 },
     { label: '오늘 승인', value: stats.approvedToday, emoji: '✅', href: '/admin/requests' },
     { label: '전체 순/반', value: stats.cellCount, emoji: '👥', href: '/admin/cells' },
-    ...(myRole === 'pastor' ? [{ label: '전체 성도', value: stats.memberCount, emoji: '👤', href: '/admin/members' }] : []),
+    ...((myRole === 'pastor' || myRole === 'elder') ? [{ label: '전체 성도', value: stats.memberCount, emoji: '👤', href: '/admin/members' }] : []),
   ]
 
   return (

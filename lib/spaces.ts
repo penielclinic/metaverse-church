@@ -71,4 +71,11 @@ export const SPACES: SpaceConfig[] = [
     description: '선교회별 활동 현황과 기도 요청',
     path: '/world/mission',
   },
+  {
+    slug: 'guide',
+    name: '사용설명서',
+    emoji: '📘',
+    description: '이음 메타버스 사용법 안내',
+    path: '/world/guide',
+  },
 ]

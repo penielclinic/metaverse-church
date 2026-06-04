@@ -30,6 +30,12 @@ export default function SanctuaryLive() {
   const channelRef = useRef<ReturnType<ReturnType<typeof createClient>['channel']> | null>(null)
   const viewRecordedRef = useRef(false)
 
+  // PiP (최소화) 상태
+  const [minimized, setMinimized] = useState(false)
+  const [pipPos, setPipPos] = useState({ x: 16, y: 80 })
+  const dragging = useRef(false)
+  const dragOffset = useRef({ x: 0, y: 0 })
+
   // 로그인 유저 ID 캐시
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -117,6 +123,54 @@ export default function SanctuaryLive() {
     }
   }
 
+  // 드래그 핸들러 (PiP 모드)
+  const handlePointerDown = (e: React.PointerEvent) => {
+    dragging.current = true
+    dragOffset.current = { x: e.clientX - pipPos.x, y: e.clientY - pipPos.y }
+    ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
+  }
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!dragging.current) return
+    setPipPos({
+      x: Math.max(0, Math.min(window.innerWidth - 200, e.clientX - dragOffset.current.x)),
+      y: Math.max(0, Math.min(window.innerHeight - 130, e.clientY - dragOffset.current.y)),
+    })
+  }
+  const handlePointerUp = () => { dragging.current = false }
+
+  // ── 최소화 PiP 모드 ──
+  if (minimized && liveVideoId) {
+    return (
+      <div
+        className="fixed z-50 rounded-xl overflow-hidden shadow-2xl border-2 border-indigo-400 bg-black"
+        style={{ left: pipPos.x, top: pipPos.y, width: 200, height: 130, touchAction: 'none' }}
+      >
+        {/* 드래그 핸들 */}
+        <div
+          className="absolute top-0 left-0 right-0 h-6 bg-gradient-to-b from-black/70 to-transparent z-10 cursor-grab active:cursor-grabbing flex items-center justify-between px-2"
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+        >
+          <span className="text-[10px] text-white/80 font-semibold select-none">예배 라이브</span>
+          <button
+            onClick={() => setMinimized(false)}
+            className="text-white/90 hover:text-white text-sm font-bold leading-none select-none"
+            title="원래 크기로"
+          >
+            ⬆
+          </button>
+        </div>
+        <iframe
+          className="w-full h-full"
+          src={`https://www.youtube.com/embed/${liveVideoId}?autoplay=1&mute=1`}
+          title="주일예배 라이브"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        />
+      </div>
+    )
+  }
+
   return (
     <>
       <style>{`
@@ -135,13 +189,23 @@ export default function SanctuaryLive() {
           style={{ paddingTop: '56.25%' }}
         >
           {liveVideoId ? (
-            <iframe
-              className="absolute inset-0 w-full h-full"
-              src={`https://www.youtube.com/embed/${liveVideoId}?autoplay=1&mute=1`}
-              title="주일예배 라이브"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            />
+            <>
+              <iframe
+                className="absolute inset-0 w-full h-full"
+                src={`https://www.youtube.com/embed/${liveVideoId}?autoplay=1&mute=1`}
+                title="주일예배 라이브"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+              {/* 최소화 버튼 */}
+              <button
+                onClick={() => setMinimized(true)}
+                className="absolute top-2 right-2 z-10 bg-black/60 hover:bg-black/80 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold transition-colors"
+                title="최소화"
+              >
+                ⬇
+              </button>
+            </>
           ) : (
             <div className="absolute inset-0 flex flex-col items-center justify-center text-white gap-3 px-4 text-center">
               <span className="text-6xl">⛪</span>

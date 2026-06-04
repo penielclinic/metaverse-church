@@ -45,7 +45,7 @@ export default function RequestsPage() {
         .from('profiles').select('role, cell_id, mission_id').eq('id', user.id).single()
       const role = (profile?.role ?? '') as string
 
-      if (role === 'pastor') {
+      if (role === 'pastor' || role === 'elder') {
         setAllowedCellIds(null) // 전체
       } else if (role === 'cell_leader' || role === 'school_teacher') {
         setAllowedCellIds(profile?.cell_id ? [profile.cell_id] : [])

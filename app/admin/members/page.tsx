@@ -215,7 +215,7 @@ export default function MembersPage() {
     }
   }
 
-  const canEditRole = myRole === 'pastor'
+  const canEditRole = myRole === 'pastor' || myRole === 'elder'
 
   return (
     <div className="px-4 py-6 max-w-screen-md mx-auto">
