@@ -14,6 +14,16 @@ import MeetingTimer from '@/components/cell/timer/MeetingTimer'
 import MVPVote from '@/components/cell/mvp/MVPVote'
 import CellAlbum from '@/components/cell/album/CellAlbum'
 import JoinRequests from '@/components/cell/JoinRequests'
+// 장로 모임방 전용 9종
+import PrayerRelay from '@/components/cell/elder/PrayerRelay'
+import ReadingProgress from '@/components/cell/elder/ReadingProgress'
+import FamilyEvents from '@/components/cell/elder/FamilyEvents'
+import WellbeingCheck from '@/components/cell/elder/WellbeingCheck'
+import GratitudeWall from '@/components/cell/elder/GratitudeWall'
+import Recommendations from '@/components/cell/elder/Recommendations'
+import CareRequests from '@/components/cell/elder/CareRequests'
+import ElderAnnouncements from '@/components/cell/elder/ElderAnnouncements'
+import HelpRequests from '@/components/cell/elder/HelpRequests'
 
 // ── 타입 ──────────────────────────────────────────────────────
 interface Message {
@@ -27,6 +37,7 @@ interface CellNote {
   id: number; userId: string; authorName: string; content: string; color: string; createdAt: string
 }
 type DrawerKey = 'word' | 'chat' | 'attendance' | 'prayer' | 'notice' | 'board' | 'timer' | 'mvp' | 'album' | 'requests'
+  | 'elder_prayer' | 'elder_reading' | 'elder_events' | 'elder_wellbeing' | 'elder_gratitude' | 'elder_reco' | 'elder_care' | 'elder_announce' | 'elder_help'
 
 // ── 쪽지 스타일 ───────────────────────────────────────────────
 const NOTE_COLORS = [
@@ -96,6 +107,19 @@ const BASE_BOARDS: { key: DrawerKey; icon: string; label: string; accent: string
 ]
 const LEADER_BOARD = { key: 'requests' as DrawerKey, icon: '📋', label: '신청\n관리', accent: '#F87171', glow: 'rgba(248,113,113,0.35)' }
 
+// 장로 모임방 전용 보드 9종
+const ELDER_BOARDS: typeof BASE_BOARDS = [
+  { key: 'elder_prayer',    icon: '🙏', label: '중보기도\n릴레이', accent: '#A78BFA', glow: 'rgba(167,139,250,0.35)' },
+  { key: 'elder_reading',   icon: '📖', label: '성경\n통독',       accent: '#6EE7B7', glow: 'rgba(110,231,183,0.35)' },
+  { key: 'elder_events',    icon: '🕊️', label: '경조사\n알림',     accent: '#F9A8D4', glow: 'rgba(249,168,212,0.35)' },
+  { key: 'elder_wellbeing', icon: '❤️‍🩹', label: '안부\n건강',      accent: '#FCA5A5', glow: 'rgba(252,165,165,0.35)' },
+  { key: 'elder_gratitude', icon: '🙌', label: '감사\n나눔',       accent: '#FDE68A', glow: 'rgba(253,230,138,0.35)' },
+  { key: 'elder_reco',      icon: '📚', label: '추천\n도서',       accent: '#5EEAD4', glow: 'rgba(94,234,212,0.35)'  },
+  { key: 'elder_care',      icon: '🤲', label: '돌봄\n요청',       accent: '#C4B5FD', glow: 'rgba(196,181,253,0.35)' },
+  { key: 'elder_announce',  icon: '📢', label: '공지\n사항',       accent: '#FDBA74', glow: 'rgba(253,186,116,0.35)' },
+  { key: 'elder_help',      icon: '🆘', label: '도움\n요청',       accent: '#FCA5A5', glow: 'rgba(252,165,165,0.35)' },
+]
+
 export default function CellRoomPage() {
   const { id } = useParams<{ id: string }>()
   const router  = useRouter()
@@ -118,6 +142,7 @@ export default function CellRoomPage() {
   const [noteColor,   setNoteColor]   = useState('yellow')
   const [isAddingNote,setIsAddingNote]= useState(false)
   const [postingNote, setPostingNote] = useState(false)
+  const [isElderRoom, setIsElderRoom] = useState(false)
 
   const bottomRef  = useRef<HTMLDivElement>(null)
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
@@ -129,8 +154,10 @@ export default function CellRoomPage() {
       if (!user) { router.push('/login'); return }
       setMyUserId(user.id)
 
-      const { data: cell } = await supabase.from('cells').select('name').eq('id', Number(id)).single()
+      const { data: cell } = await supabase.from('cells').select('name, mission_id').eq('id', Number(id)).single()
       setCellName(cell?.name ?? `순 ${id}`)
+      // 장로회(mission_id=4) 소속이면 장로 전용 보드 활성화
+      if (cell?.mission_id === 4) setIsElderRoom(true)
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: profileRaw } = await (supabase.from('profiles') as any)
@@ -348,6 +375,26 @@ export default function CellRoomPage() {
           </div>
         )
 
+      // 장로 모임방 전용 9종
+      case 'elder_prayer':
+        return <div className="flex-1 overflow-y-auto p-4 pb-8"><PrayerRelay myUserId={myUserId} /></div>
+      case 'elder_reading':
+        return <div className="flex-1 overflow-y-auto p-4 pb-8"><ReadingProgress myUserId={myUserId} /></div>
+      case 'elder_events':
+        return <div className="flex-1 overflow-y-auto p-4 pb-8"><FamilyEvents myUserId={myUserId} /></div>
+      case 'elder_wellbeing':
+        return <div className="flex-1 overflow-y-auto p-4 pb-8"><WellbeingCheck myUserId={myUserId} /></div>
+      case 'elder_gratitude':
+        return <div className="flex-1 overflow-y-auto p-4 pb-8"><GratitudeWall myUserId={myUserId} /></div>
+      case 'elder_reco':
+        return <div className="flex-1 overflow-y-auto p-4 pb-8"><Recommendations myUserId={myUserId} /></div>
+      case 'elder_care':
+        return <div className="flex-1 overflow-y-auto p-4 pb-8"><CareRequests myUserId={myUserId} /></div>
+      case 'elder_announce':
+        return <div className="flex-1 overflow-y-auto p-4 pb-8"><ElderAnnouncements myUserId={myUserId} /></div>
+      case 'elder_help':
+        return <div className="flex-1 overflow-y-auto p-4 pb-8"><HelpRequests myUserId={myUserId} /></div>
+
       case 'board':
         return (
           <div className="flex flex-col h-full">
@@ -429,7 +476,11 @@ export default function CellRoomPage() {
     }
   }
 
-  const BOARDS = isLeader ? [...BASE_BOARDS, LEADER_BOARD] : BASE_BOARDS
+  const BOARDS = [
+    ...BASE_BOARDS,
+    ...(isElderRoom ? ELDER_BOARDS : []),
+    ...(isLeader ? [LEADER_BOARD] : []),
+  ]
   const activeBoard = BOARDS.find(b => b.key === activeDrawer)
 
   // ── 메인 렌더 ─────────────────────────────────────────────────
@@ -535,8 +586,8 @@ export default function CellRoomPage() {
             </div>
           </div>
 
-          {/* 3×3 보드 그리드 */}
-          <div className="grid grid-cols-3 gap-3">
+          {/* 보드 그리드 — 장로방은 항목이 많아 스크롤 가능 */}
+          <div className={`grid grid-cols-3 gap-3 ${isElderRoom ? 'max-h-[55vh] overflow-y-auto pr-1' : ''}`}>
             {BOARDS.map((board) => {
               const badge = board.key === 'chat' ? newMsgCount : board.key === 'board' ? notes.length : board.key === 'requests' ? pendingCount : 0
               const isTimerActive = board.key === 'timer' && isLive
