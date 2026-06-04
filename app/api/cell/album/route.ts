@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { todayKST } from '@/lib/challenge-week'
 
 const BUCKET = 'cell-album'
 const MAX_FILE_SIZE = 10 * 1024 * 1024
@@ -81,7 +82,7 @@ export async function POST(req: Request) {
 
     // Storage 업로드 (user 클라이언트)
     const ext         = file.name.split('.').pop()?.toLowerCase() ?? 'jpg'
-    const date        = new Date().toISOString().slice(0, 10)
+    const date        = todayKST()
     const uuid        = crypto.randomUUID()
     const storagePath = `cell-${cellId}/${date}-${uuid}.${ext}`
     const arrayBuffer = await file.arrayBuffer()

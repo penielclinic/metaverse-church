@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { todayKST } from '@/lib/challenge-week'
 
 const BUCKET = 'gallery'
 const MAX_FILE_SIZE = 10 * 1024 * 1024
@@ -68,7 +69,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: '파일 크기는 10MB 이하여야 합니다.' }, { status: 400 })
 
     const ext         = file.name.split('.').pop()?.toLowerCase() ?? 'jpg'
-    const date        = new Date().toISOString().slice(0, 10)
+    const date        = todayKST()
     const uuid        = crypto.randomUUID()
     const storagePath = `${date}-${uuid}.${ext}`
     const arrayBuffer = await file.arrayBuffer()

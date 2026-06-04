@@ -29,7 +29,7 @@ const STATUS_CONFIG = {
 } as const
 
 export default function AttendanceBoard({ cellId, date }: AttendanceBoardProps) {
-  const today = date ?? new Date().toISOString().slice(0, 10)
+  const today = date ?? new Date(Date.now() + 9 * 3_600_000).toISOString().slice(0, 10)
   const [members, setMembers] = useState<Member[]>([])
   const [isLeader, setIsLeader] = useState(false)
   const [loading, setLoading] = useState(true)

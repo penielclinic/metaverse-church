@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { todayKST, yesterdayKST } from '@/lib/challenge-week'
 
 function expToNextLevel(level: number) {
   return Math.floor(100 * Math.pow(1.5, level - 1))
@@ -35,7 +36,7 @@ export async function POST(req: Request) {
       )
     }
 
-    const today = new Date().toISOString().split('T')[0] // 'YYYY-MM-DD'
+    const today = todayKST()
 
     // 오늘 이미 인증했는지 확인 (UNIQUE 제약이 있지만 친절한 에러 먼저)
     const { count: todayCount } = await supabase
@@ -78,14 +79,12 @@ export async function POST(req: Request) {
 
     let newStreak = 1
     if (avatar) {
-      const lastDate = avatar.last_devotion_date
-        ? new Date(avatar.last_devotion_date as string)
+      const lastDateStr = avatar.last_devotion_date
+        ? String(avatar.last_devotion_date).slice(0, 10)
         : null
-      const yesterday = new Date()
-      yesterday.setDate(yesterday.getDate() - 1)
-      const yesterdayStr = yesterday.toISOString().split('T')[0]
+      const yesterdayStr = yesterdayKST()
 
-      if (lastDate && lastDate.toISOString().split('T')[0] === yesterdayStr) {
+      if (lastDateStr === yesterdayStr) {
         newStreak = ((avatar.devotion_streak as number) ?? 0) + 1
       }
     }

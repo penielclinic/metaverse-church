@@ -18,8 +18,7 @@ export default function AdminDevotionsPage() {
   const [rows, setRows] = useState<DevotionRow[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedDate, setSelectedDate] = useState(() => {
-    const d = new Date()
-    return d.toISOString().slice(0, 10)
+    return new Date(Date.now() + 9 * 3_600_000).toISOString().slice(0, 10)
   })
   const [expandedId, setExpandedId] = useState<number | null>(null)
 

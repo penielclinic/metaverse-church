@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { todayKST } from '@/lib/challenge-week'
 
 type AmenRow = { user_id: string }
 type ProfileRow = { id: string; name: string }
@@ -21,7 +22,7 @@ export async function GET() {
       data: { user },
     } = await supabase.auth.getUser()
 
-    const today = new Date().toISOString().split('T')[0]
+    const today = todayKST()
 
     // 오늘 큐티 목록 (공개 항목) + 작성자 이름 + 아멘 목록
     const { data: rawLogs, error } = await supabase
@@ -38,8 +39,8 @@ export async function GET() {
       `
       )
       .eq('logged_date', today)
-      .eq('is_public', true)
       .order('created_at', { ascending: false })
+      .limit(5)
 
     if (error) {
       console.error('[devotion/feed] select error:', error)

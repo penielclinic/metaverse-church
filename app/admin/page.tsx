@@ -27,7 +27,7 @@ export default function AdminDashboard() {
       const role = (profile?.role ?? '') as string
       setMyRole(role)
 
-      const today = new Date().toISOString().slice(0, 10)
+      const today = new Date(Date.now() + 9 * 3_600_000).toISOString().slice(0, 10)
 
       // 미처리 신청 수
       let pendingQ = supabase.from('cell_join_requests').select('id', { count: 'exact', head: true }).eq('status', 'pending')

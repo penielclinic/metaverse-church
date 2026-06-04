@@ -67,7 +67,7 @@ export default function SanctuaryLive() {
   useEffect(() => {
     if (!liveVideoId || !userId || viewRecordedRef.current) return
     viewRecordedRef.current = true
-    const today = new Date().toISOString().split('T')[0]
+    const today = new Date(Date.now() + 9 * 3_600_000).toISOString().slice(0, 10)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ;(supabase as any).from('worship_views').upsert(
       { user_id: userId, worship_date: today, youtube_id: liveVideoId },
@@ -112,7 +112,7 @@ export default function SanctuaryLive() {
 
     // DB 저장 (로그인한 경우)
     if (userId) {
-      const today = new Date().toISOString().split('T')[0]
+      const today = new Date(Date.now() + 9 * 3_600_000).toISOString().slice(0, 10)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ;(supabase as any).from('worship_reactions').insert({
         user_id: userId,
