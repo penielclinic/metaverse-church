@@ -660,8 +660,8 @@ export default function CellRoomPage() {
                   <span className="text-[28px] leading-none relative z-10">{board.icon}</span>
 
                   {/* 레이블 */}
-                  <span className="text-[10px] font-semibold text-center leading-tight whitespace-pre-line relative z-10"
-                    style={{ color: board.accent, textShadow: `0 0 10px ${board.glow}` }}>
+                  <span className="text-[10px] font-bold text-center leading-tight whitespace-pre-line relative z-10"
+                    style={{ color: '#44403c' }}>
                     {board.label}
                   </span>
 
