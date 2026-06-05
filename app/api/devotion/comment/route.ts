@@ -10,18 +10,29 @@ export async function GET(req: Request) {
 
   const { data, error } = await supabase
     .from('devotion_comments')
-    .select('id, content, created_at, user_id, profiles!inner(name)')
+    .select('id, content, created_at, user_id')
     .eq('devotion_id', Number(devotionId))
     .order('created_at', { ascending: true })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  const comments = (data ?? []).map((c: any) => ({
+  const rows = (data ?? []) as any[]
+  const userIds = Array.from(new Set<string>(rows.map((c: any) => c.user_id)))
+  const nameMap: Record<string, string> = {}
+  if (userIds.length > 0) {
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, name')
+      .in('id', userIds)
+    ;(profiles ?? []).forEach((p: any) => { nameMap[p.id] = p.name })
+  }
+
+  const comments = rows.map((c: any) => ({
     id: c.id,
     content: c.content,
     createdAt: c.created_at,
     userId: c.user_id,
-    authorName: c.profiles?.name ?? '성도',
+    authorName: nameMap[c.user_id] ?? '성도',
   }))
 
   return NextResponse.json({ comments })
