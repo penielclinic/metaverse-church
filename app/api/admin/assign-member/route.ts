@@ -20,7 +20,7 @@ export async function PATCH(req: NextRequest) {
 
   const { data: caller } = await supabase
     .from('profiles').select('role').eq('id', user.id).single()
-  if (!caller || !['pastor', 'youth_pastor'].includes(caller.role)) {
+  if (!caller || !['pastor', 'youth_pastor', 'elder'].includes(caller.role)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
