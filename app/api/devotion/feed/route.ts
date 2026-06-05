@@ -9,6 +9,7 @@ type DevotionRow = {
   bible_ref: string | null
   content: string | null
   created_at: string
+  logged_date: string
   user_id: string
   profiles: ProfileRow
   devotion_amens: AmenRow[]
@@ -24,7 +25,7 @@ export async function GET() {
 
     const today = todayKST()
 
-    // 오늘 큐티 목록 (공개 항목) + 작성자 이름 + 아멘 목록
+    // 최근 큐티 목록 + 작성자 이름 + 아멘 목록
     const { data: rawLogs, error } = await supabase
       .from('devotion_logs')
       .select(
@@ -34,13 +35,13 @@ export async function GET() {
         content,
         created_at,
         user_id,
+        logged_date,
         profiles!inner ( id, name ),
         devotion_amens ( user_id )
       `
       )
-      .eq('logged_date', today)
       .order('created_at', { ascending: false })
-      .limit(5)
+      .limit(20)
 
     if (error) {
       console.error('[devotion/feed] select error:', error)
@@ -76,6 +77,7 @@ export async function GET() {
       bibleRef: d.bible_ref ?? '',
       content: d.content ?? '',
       createdAt: d.created_at,
+      loggedDate: d.logged_date ?? '',
       authorId: d.profiles?.id ?? '',
       authorName: d.profiles?.name ?? '성도',
       amenCount: d.devotion_amens?.length ?? 0,

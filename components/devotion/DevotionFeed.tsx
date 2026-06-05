@@ -129,8 +129,8 @@ export default function DevotionFeed() {
       {/* 섹션 헤더 */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-black text-gray-800">📖 큐티 인증 피드</h2>
-          <p className="text-xs text-gray-400 mt-0.5">{todayStr} · 셀원들의 오늘 묵상</p>
+          <h2 className="text-lg font-black text-gray-800">📖 말씀 묵상 나눔</h2>
+          <p className="text-xs text-gray-400 mt-0.5">{todayStr} · 성도들의 묵상을 함께 나눠요</p>
         </div>
         <button
           onClick={loadFeed}
