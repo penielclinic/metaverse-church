@@ -10,11 +10,18 @@ interface Mission { id: number; name: string }
 interface Cell    { id: number; name: string; mission_id: number }
 
 const ROLE_OPTIONS = [
-  { value: 'youth',          label: '청년' },
-  { value: 'elder',          label: '장로' },
-  { value: 'cell_leader',    label: '순장' },
-  { value: 'mission_leader', label: '선교회장' },
-  { value: 'youth_pastor',   label: '교역자' },
+  { value: 'youth',            label: '청년' },
+  { value: 'young_children',   label: '유년부' },
+  { value: 'elementary',       label: '초등부' },
+  { value: 'middle_school',    label: '중등부' },
+  { value: 'high_school',      label: '고등부' },
+  { value: 'elder',            label: '장로' },
+  { value: 'cell_leader',      label: '순장' },
+  { value: 'mission_leader',   label: '선교회장' },
+  { value: 'youth_pastor',     label: '교역자' },
+  { value: 'pastor_wife',      label: '목사님사모' },
+  { value: 'associate_pastor', label: '부목사님' },
+  { value: 'pastor',           label: '목사님' },
 ]
 
 export default function EmailAuthForm() {
