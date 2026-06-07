@@ -26,7 +26,8 @@ export async function middleware(request: NextRequest) {
 
     // 승인 대기 확인 (/world 접근 시에만 — admin은 관리자가 직접 승인하므로 패스)
     if (pathname.startsWith('/world')) {
-      const { data: profile } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: profile } = await (supabase as any)
         .from('profiles')
         .select('is_approved')
         .eq('id', user.id)
