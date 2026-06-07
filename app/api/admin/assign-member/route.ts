@@ -24,10 +24,12 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  const { userId, role, cellId } = await req.json() as {
+  const { userId, role, cellId, name, phone } = await req.json() as {
     userId: string
     role: string
     cellId: number | null
+    name?: string
+    phone?: string | null
   }
   if (!userId || !role) {
     return NextResponse.json({ error: 'userId와 role은 필수입니다.' }, { status: 400 })
@@ -36,10 +38,14 @@ export async function PATCH(req: NextRequest) {
   // service role 클라이언트 (RLS 우회)
   const admin = createAdminClient()
 
-  // 1. 프로필 업데이트
+  // 1. 프로필 업데이트 (이름·전화번호 포함)
+  const updatePayload: Record<string, unknown> = { role, cell_id: cellId ?? null }
+  if (name?.trim()) updatePayload.name = name.trim()
+  if (phone !== undefined) updatePayload.phone = phone?.trim() || null
+
   const { error: profileErr } = await admin
     .from('profiles')
-    .update({ role, cell_id: cellId ?? null })
+    .update(updatePayload)
     .eq('id', userId)
   if (profileErr) return NextResponse.json({ error: profileErr.message }, { status: 500 })
 
