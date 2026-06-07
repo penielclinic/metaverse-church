@@ -23,6 +23,9 @@ interface PendingSignup {
   name: string
   email: string
   phone: string | null
+  role: string
+  cellName: string | null
+  missionName: string | null
   createdAt: string
 }
 
@@ -98,16 +101,25 @@ export default function RequestsPage() {
     // pending_signups 뷰 사용 (email 포함)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data } = await (supabase as any).from('pending_signups').select('*').order('created_at', { ascending: false })
-    setSignups(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const mapped = (data ?? []).map((r: any) => ({
+      id:          r.id,
+      name:        r.name,
+      email:       r.email ?? '',
+      phone:       r.phone ?? null,
+      role:        r.role ?? 'youth',
+      cellName:    r.cell_name ?? null,
+      missionName: r.mission_name ?? null,
+      createdAt:   r.created_at,
+    }))
+    setSignups(mapped)
+    // roleMap을 신청자가 선택한 역할로 초기화
+    setRoleMap((prev) => {
+      const next = { ...prev }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (data ?? []).map((r: any) => ({
-        id: r.id,
-        name: r.name,
-        email: r.email ?? '',
-        phone: r.phone ?? null,
-        createdAt: r.created_at,
-      }))
-    )
+      mapped.forEach((s: any) => { if (!next[s.id]) next[s.id] = s.role })
+      return next
+    })
     setSignupsLoading(false)
   }, [supabase])
 
@@ -245,10 +257,26 @@ export default function RequestsPage() {
             {signups.map((s) => (
               <div key={s.id} className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
                 <div className="flex items-start justify-between gap-2 mb-3">
-                  <div>
+                  <div className="min-w-0">
                     <p className="font-bold text-gray-800 text-base whitespace-nowrap">{s.name}</p>
                     <p className="text-xs text-gray-500 mt-0.5">{s.email}</p>
                     {s.phone && <p className="text-xs text-gray-500">{s.phone}</p>}
+                    {/* 신청자가 선택한 역할·순 */}
+                    <div className="flex flex-wrap gap-1 mt-1.5">
+                      <span className="text-[11px] bg-indigo-50 text-indigo-700 font-semibold px-2 py-0.5 rounded-full whitespace-nowrap">
+                        {ROLE_OPTIONS.find((o) => o.value === s.role)?.label ?? s.role}
+                      </span>
+                      {s.missionName && (
+                        <span className="text-[11px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full whitespace-nowrap">
+                          {s.missionName}
+                        </span>
+                      )}
+                      {s.cellName && (
+                        <span className="text-[11px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full whitespace-nowrap">
+                          {s.cellName}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <span className="text-[10px] text-gray-400 whitespace-nowrap flex-shrink-0">{fmt(s.createdAt)}</span>
                 </div>

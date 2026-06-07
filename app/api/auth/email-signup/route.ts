@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function POST(req: NextRequest) {
-  const { name, email, password, phone } = await req.json()
+  const { name, email, password, phone, role, cellId } = await req.json()
 
   if (!name || !email || !password) {
     return NextResponse.json({ error: '이름, 이메일, 비밀번호를 모두 입력해 주세요.' }, { status: 400 })
@@ -24,20 +24,25 @@ export async function POST(req: NextRequest) {
   const { data: authData, error: authError } = await admin.auth.admin.createUser({
     email,
     password,
-    email_confirm: true, // 이메일 확인 없이 바로 활성화
+    email_confirm: true,
   })
 
   if (authError || !authData.user) {
     return NextResponse.json({ error: '계정 생성에 실패했습니다. 다시 시도해 주세요.' }, { status: 500 })
   }
 
+  // 장로는 cell_id 자동 배정을 위해 null로 저장 (승인 시 API에서 처리)
+  const assignRole   = role   ?? 'youth'
+  const assignCellId = assignRole === 'elder' ? null : (cellId ?? null)
+
   // profiles 생성 — is_approved=false (관리자 승인 대기)
   const { error: profileError } = await admin.from('profiles').insert({
-    id: authData.user.id,
-    name: name.trim(),
-    phone: phone?.trim() || null,
-    role: 'youth',
-    is_approved: false,
+    id:            authData.user.id,
+    name:          name.trim(),
+    phone:         phone ?? null,
+    role:          assignRole,
+    cell_id:       assignCellId,
+    is_approved:   false,
     signup_method: 'email',
   })
 
