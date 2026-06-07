@@ -34,6 +34,8 @@ export async function GET(request: NextRequest) {
       id: data.user.id,
       name: kakaoName,
       role: 'youth',
+      is_approved: true,
+      signup_method: 'kakao',
     })
 
     // 신규 유저 → 아바타 초기화 페이지로

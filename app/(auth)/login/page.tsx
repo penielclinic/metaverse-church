@@ -1,4 +1,5 @@
 import KakaoLoginButton from '@/components/auth/KakaoLoginButton'
+import EmailAuthForm from '@/components/auth/EmailAuthForm'
 
 export default function LoginPage({
   searchParams,
@@ -8,9 +9,8 @@ export default function LoginPage({
   return (
     <main className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-blue-50 to-white px-6">
       {/* 로고 + 앱 이름 */}
-      <div className="flex flex-col items-center mb-12">
+      <div className="flex flex-col items-center mb-10">
         <div className="w-24 h-24 rounded-full bg-blue-600 flex items-center justify-center shadow-lg mb-5">
-          {/* 교회 십자가 아이콘 */}
           <svg width="48" height="48" viewBox="0 0 48 48" fill="none" aria-label="교회 십자가">
             <rect x="20" y="6" width="8" height="36" rx="3" fill="white" />
             <rect x="8" y="16" width="32" height="8" rx="3" fill="white" />
@@ -25,12 +25,30 @@ export default function LoginPage({
       </div>
 
       {/* 로그인 카드 */}
-      <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-8 flex flex-col gap-5">
-        <p className="text-center text-gray-700 font-medium text-base" style={{ wordBreak: 'keep-all' }}>
-          카카오 계정으로 간편하게 로그인하세요
-        </p>
+      <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-8 flex flex-col gap-6">
 
-        <KakaoLoginButton />
+        {/* 카카오 로그인 */}
+        <div>
+          <p className="text-center text-gray-700 font-medium text-sm mb-3" style={{ wordBreak: 'keep-all' }}>
+            카카오 계정으로 간편 로그인
+          </p>
+          <KakaoLoginButton />
+        </div>
+
+        {/* 구분선 */}
+        <div className="flex items-center gap-3">
+          <div className="flex-1 h-px bg-gray-200" />
+          <span className="text-xs text-gray-400 whitespace-nowrap">또는</span>
+          <div className="flex-1 h-px bg-gray-200" />
+        </div>
+
+        {/* 이메일 로그인/가입 */}
+        <div>
+          <p className="text-center text-gray-500 text-xs mb-3" style={{ wordBreak: 'keep-all' }}>
+            카카오 로그인이 어려우신 분은 아래를 이용해 주세요
+          </p>
+          <EmailAuthForm />
+        </div>
 
         {searchParams.error && (
           <p className="text-center text-sm text-red-500" style={{ wordBreak: 'keep-all' }}>
