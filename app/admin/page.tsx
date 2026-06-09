@@ -150,6 +150,13 @@ export default function AdminDashboard() {
                 <p className="text-xs text-gray-400 mt-0.5" style={{ wordBreak: 'keep-all' }}>인원 현황 · 관리</p>
               </div>
             </Link>
+            <Link href="/admin/cell-activity" className="flex items-center gap-3 p-4 bg-white border border-gray-200 rounded-2xl shadow-sm hover:shadow-md transition-all">
+              <span className="text-xl">📈</span>
+              <div>
+                <p className="font-semibold text-gray-800 text-sm whitespace-nowrap">소그룹 활동 현황</p>
+                <p className="text-xs text-gray-400 mt-0.5" style={{ wordBreak: 'keep-all' }}>출석률 · 모임 빈도 · 활성 지표</p>
+              </div>
+            </Link>
           </div>
         </>
       )}

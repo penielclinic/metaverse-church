@@ -19,7 +19,8 @@ interface Member {
 
 interface AttendanceBoardProps {
   cellId: number
-  date?: string // YYYY-MM-DD, 기본값: 오늘
+  date?: string    // YYYY-MM-DD, 기본값: 오늘
+  isLeader?: boolean // 부모에서 전달받으면 내부 조회 생략
 }
 
 const STATUS_CONFIG = {
@@ -28,10 +29,10 @@ const STATUS_CONFIG = {
   late:    { icon: '🕐', label: '지각', bg: 'bg-yellow-100',text: 'text-yellow-700',border: 'border-yellow-300' },
 } as const
 
-export default function AttendanceBoard({ cellId, date }: AttendanceBoardProps) {
+export default function AttendanceBoard({ cellId, date, isLeader: isLeaderProp }: AttendanceBoardProps) {
   const today = date ?? new Date(Date.now() + 9 * 3_600_000).toISOString().slice(0, 10)
   const [members, setMembers] = useState<Member[]>([])
-  const [isLeader, setIsLeader] = useState(false)
+  const [isLeader, setIsLeader] = useState(isLeaderProp ?? false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState<string | null>(null)
 
@@ -39,17 +40,23 @@ export default function AttendanceBoard({ cellId, date }: AttendanceBoardProps) 
 
   const fetchData = useCallback(async () => {
     setLoading(true)
-    // 현재 유저 role 확인
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { setLoading(false); return }
+    // 부모에서 isLeader를 전달받지 않은 경우에만 직접 조회
+    if (isLeaderProp === undefined) {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { setLoading(false); return }
 
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single()
 
-    setIsLeader(profile?.role === 'cell_leader' || profile?.role === 'pastor')
+      setIsLeader(
+        profile?.role === 'cell_leader' ||
+        profile?.role === 'pastor' ||
+        profile?.role === 'youth_pastor'
+      )
+    }
 
     // 해당 셀 순원 목록 + 아바타
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -80,7 +87,7 @@ export default function AttendanceBoard({ cellId, date }: AttendanceBoardProps) 
       }))
     )
     setLoading(false)
-  }, [cellId, today]) // supabase is stable
+  }, [cellId, today, isLeaderProp]) // supabase is stable
 
   useEffect(() => { fetchData() }, [fetchData])
 

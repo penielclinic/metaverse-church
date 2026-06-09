@@ -372,7 +372,7 @@ export default function CellRoomPage() {
         )
 
       case 'attendance':
-        return <div className="flex-1 overflow-y-auto p-4 pb-8"><AttendanceBoard cellId={Number(id)} /></div>
+        return <div className="flex-1 overflow-y-auto p-4 pb-8"><AttendanceBoard cellId={Number(id)} isLeader={isLeader} /></div>
 
       case 'prayer':
         return <div className="flex-1 overflow-y-auto p-4 pb-8"><PrayerBoard cellId={Number(id)} myUserId={myUserId} /></div>

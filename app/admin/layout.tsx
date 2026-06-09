@@ -8,13 +8,14 @@ import { createClient } from '@/lib/supabase/client'
 const ADMIN_ROLES = ['pastor', 'elder', 'school_pastor', 'mission_leader', 'youth_pastor', 'youth_leader', 'youth_vice_leader', 'youth_secretary', 'school_teacher', 'cell_leader']
 
 const NAV = [
-  { href: '/admin',           label: '대시보드', emoji: '📊' },
-  { href: '/admin/notices',   label: '공지사항', emoji: '📢' },
-  { href: '/admin/requests',  label: '순 신청',  emoji: '📋' },
-  { href: '/admin/members',   label: '성도 목록', emoji: '👤' },
-  { href: '/admin/cells',     label: '순/반 목록', emoji: '👥' },
-  { href: '/admin/worship',   label: '예배 현황', emoji: '📺' },
-  { href: '/admin/devotions', label: '말씀 인증', emoji: '📖' },
+  { href: '/admin',                label: '대시보드',     emoji: '📊' },
+  { href: '/admin/notices',        label: '공지사항',     emoji: '📢' },
+  { href: '/admin/requests',       label: '순 신청',      emoji: '📋' },
+  { href: '/admin/members',        label: '성도 목록',    emoji: '👤' },
+  { href: '/admin/cells',          label: '순/반 목록',   emoji: '👥' },
+  { href: '/admin/cell-activity',  label: '소그룹 활동',  emoji: '📈' },
+  { href: '/admin/worship',        label: '예배 현황',    emoji: '📺' },
+  { href: '/admin/devotions',      label: '말씀 인증',    emoji: '📖' },
 ]
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
