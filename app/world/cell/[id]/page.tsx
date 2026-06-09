@@ -10,8 +10,6 @@ import type { SkinTone, Gender, Outfit } from '@/components/world/AvatarPreview'
 import WordBoard from '@/components/cell/word/WordBoard'
 import AttendanceBoard from '@/components/cell/attendance/AttendanceBoard'
 import PrayerBoard from '@/components/cell/prayer/PrayerBoard'
-import NoticeBoard from '@/components/cell/notice/NoticeBoard'
-import ScheduleCalendar from '@/components/cell/notice/ScheduleCalendar'
 import MeetingTimer from '@/components/cell/timer/MeetingTimer'
 import MVPVote from '@/components/cell/mvp/MVPVote'
 import CellAlbum from '@/components/cell/album/CellAlbum'
@@ -38,7 +36,7 @@ interface Member {
 interface CellNote {
   id: number; userId: string; authorName: string; content: string; color: string; createdAt: string
 }
-type DrawerKey = 'word' | 'chat' | 'attendance' | 'prayer' | 'notice' | 'board' | 'timer' | 'mvp' | 'album' | 'requests'
+type DrawerKey = 'word' | 'chat' | 'attendance' | 'prayer' | 'board' | 'timer' | 'mvp' | 'album' | 'requests'
   | 'elder_prayer' | 'elder_testimony' | 'elder_events' | 'elder_wellbeing' | 'elder_gratitude' | 'elder_reco' | 'elder_care' | 'elder_announce' | 'elder_help'
 
 // ── 쪽지 스타일 ───────────────────────────────────────────────
@@ -101,7 +99,6 @@ const BASE_BOARDS: { key: DrawerKey; icon: string; label: string; accent: string
   { key: 'chat',       icon: '💬', label: '대화방',        accent: '#60A5FA', glow: 'rgba(96,165,250,0.35)' },
   { key: 'attendance', icon: '✅', label: '출석\n체크',    accent: '#34D399', glow: 'rgba(52,211,153,0.35)' },
   { key: 'prayer',     icon: '🙏', label: '기도\n제목',    accent: '#C084FC', glow: 'rgba(192,132,252,0.35)' },
-  { key: 'notice',     icon: '📌', label: '공지\n일정',    accent: '#FB923C', glow: 'rgba(251,146,60,0.35)'  },
   { key: 'board',      icon: '📝', label: '쪽지\n보드',    accent: '#F472B6', glow: 'rgba(244,114,182,0.35)' },
   { key: 'timer',      icon: '⏱️', label: '모임\n타이머',  accent: '#818CF8', glow: 'rgba(129,140,248,0.35)' },
   { key: 'mvp',        icon: '👑', label: 'MVP\n투표',     accent: '#FBBF24', glow: 'rgba(251,191,36,0.35)'  },
@@ -254,6 +251,17 @@ export default function CellRoomPage() {
       await channel.subscribe()
       await channel.track(me)
       channelRef.current = channel
+
+      // ── 입장 시 자동 출석 체크 (자기 자신 · present · 오늘) ──
+      // 목사·청년담당자는 순방문이므로 소속 셀 일치할 때만 기록
+      if (Number(profile?.cell_id) === Number(id)) {
+        const todayKST = new Date(Date.now() + 9 * 3_600_000).toISOString().slice(0, 10)
+        fetch('/api/cell/attendance', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: user.id, cellId: Number(id), status: 'present', date: todayKST }),
+        }).catch(() => {})
+      }
     }
 
     init()
@@ -377,13 +385,6 @@ export default function CellRoomPage() {
       case 'prayer':
         return <div className="flex-1 overflow-y-auto p-4 pb-8"><PrayerBoard cellId={Number(id)} myUserId={myUserId} /></div>
 
-      case 'notice':
-        return (
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-8">
-            <NoticeBoard cellId={id} isLeader={isLeader} />
-            <ScheduleCalendar cellId={id} isLeader={isLeader} />
-          </div>
-        )
 
       case 'timer':
         return <div className="flex-1 overflow-y-auto p-4 pb-8"><MeetingTimer cellId={id} isLeader={isLeader} /></div>
@@ -714,7 +715,7 @@ export default function CellRoomPage() {
           <div className="absolute bottom-0 left-0 right-0 rounded-t-3xl overflow-hidden flex flex-col"
             style={{
               zIndex: 40,
-              height: activeDrawer === 'chat' || activeDrawer === 'board' || activeDrawer === 'notice' ? '90vh' : '78vh',
+              height: activeDrawer === 'chat' || activeDrawer === 'board' ? '90vh' : '78vh',
               background: 'linear-gradient(180deg,#0d1120 0%,#111827 100%)',
               border: `1px solid ${activeBoard?.accent ?? 'rgba(251,191,36,0.2)'}30`,
               borderBottom: 'none',

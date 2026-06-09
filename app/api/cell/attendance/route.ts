@@ -54,7 +54,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
     }
 
-    // 순장·목사만 출석 체크 가능
     const { data: myProfile } = await supabase
       .from('profiles')
       .select('role, cell_id')
@@ -65,10 +64,6 @@ export async function POST(req: Request) {
       myProfile?.role === 'cell_leader' ||
       myProfile?.role === 'pastor' ||
       myProfile?.role === 'youth_pastor'
-
-    if (!isLeader) {
-      return NextResponse.json({ error: '순장만 출석을 기록할 수 있습니다.' }, { status: 403 })
-    }
 
     const body = await req.json()
     const { userId, cellId, status, date } = body as {
@@ -87,17 +82,34 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: '유효하지 않은 상태값입니다.' }, { status: 400 })
     }
 
-    // UPSERT — 같은 날짜·유저·셀 중복 방지
-    const { error: upsertError } = await supabase
-      .from('attendance_logs' as never)
-      .upsert(
-        { cell_id: cellId, user_id: userId, date, status } as never,
-        { onConflict: 'cell_id,user_id,date' }
-      )
+    // self-check-in: 자기 자신을 present로만 기록 가능 (입장 시 자동 출석)
+    const isSelfCheckin = userId === user.id && status === 'present'
 
-    if (upsertError) {
-      console.error('[attendance POST upsert]', upsertError)
-      return NextResponse.json({ error: '저장 실패' }, { status: 500 })
+    if (!isLeader && !isSelfCheckin) {
+      return NextResponse.json({ error: '순장만 타인의 출석을 기록할 수 있습니다.' }, { status: 403 })
+    }
+
+    if (isSelfCheckin) {
+      // 이미 기록 있으면 조용히 무시 (중복 입장 방지)
+      const { error: insertError } = await supabase
+        .from('attendance_logs' as never)
+        .insert({ cell_id: cellId, user_id: userId, date, status } as never)
+      if (insertError && (insertError as { code?: string }).code !== '23505') {
+        console.error('[attendance self-checkin]', insertError)
+        return NextResponse.json({ error: '저장 실패' }, { status: 500 })
+      }
+    } else {
+      // 순장: upsert (기존 기록 덮어쓰기 가능)
+      const { error: upsertError } = await supabase
+        .from('attendance_logs' as never)
+        .upsert(
+          { cell_id: cellId, user_id: userId, date, status } as never,
+          { onConflict: 'cell_id,user_id,date' }
+        )
+      if (upsertError) {
+        console.error('[attendance POST upsert]', upsertError)
+        return NextResponse.json({ error: '저장 실패' }, { status: 500 })
+      }
     }
 
     // ── 순보고 연동: attendance_total 업데이트 ─────────────────
