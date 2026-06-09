@@ -116,7 +116,7 @@ export default function CellActivityPage() {
         if (missionName) missionSet.add(missionName)
 
         const cellLogs = logsByCellId[c.id] ?? []
-        const dates = [...new Set(cellLogs.map((l: any) => l.date))].sort()
+        const dates = Array.from(new Set(cellLogs.map((l: any) => l.date as string))).sort()
         const meetingCount30d = dates.length
         const lastMeetingDate = dates.length ? dates[dates.length - 1] : null
 
