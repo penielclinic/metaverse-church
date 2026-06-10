@@ -4,7 +4,6 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 type ReactionType = 'amen' | 'clap' | 'hallelujah'
-type CaptionLang = 'off' | 'ko' | 'en'
 
 interface FloatingEmoji {
   id: number
@@ -18,16 +17,38 @@ const REACTIONS: { type: ReactionType; emoji: string; label: string }[] = [
   { type: 'hallelujah', emoji: '✝️', label: '할렐루야' },
 ]
 
-const CAPTION_OPTIONS: { lang: CaptionLang; label: string }[] = [
-  { lang: 'off', label: '자막 끄기' },
-  { lang: 'ko', label: '한국어' },
-  { lang: 'en', label: 'English' },
-]
+// YouTube IFrame Player API 타입 (최소 선언)
+/* eslint-disable @typescript-eslint/no-explicit-any */
+declare global {
+  interface Window {
+    YT?: any
+    onYouTubeIframeAPIReady?: () => void
+  }
+}
 
-function buildEmbedUrl(videoId: string, captionLang: CaptionLang) {
-  const base = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1`
-  if (captionLang === 'off') return base
-  return `${base}&cc_load_policy=1&cc_lang_pref=${captionLang}`
+const YT_API_SRC = 'https://www.youtube.com/iframe_api'
+
+// IFrame API 스크립트를 1회만 로드하고, 준비되면 resolve
+let ytApiPromise: Promise<void> | null = null
+function loadYouTubeApi(): Promise<void> {
+  if (typeof window === 'undefined') return Promise.resolve()
+  if (window.YT?.Player) return Promise.resolve()
+  if (ytApiPromise) return ytApiPromise
+
+  ytApiPromise = new Promise<void>((resolve) => {
+    const prev = window.onYouTubeIframeAPIReady
+    window.onYouTubeIframeAPIReady = () => {
+      prev?.()
+      resolve()
+    }
+    if (!document.getElementById('youtube-iframe-api')) {
+      const tag = document.createElement('script')
+      tag.id = 'youtube-iframe-api'
+      tag.src = YT_API_SRC
+      document.body.appendChild(tag)
+    }
+  })
+  return ytApiPromise
 }
 
 export default function SanctuaryLive() {
@@ -39,10 +60,11 @@ export default function SanctuaryLive() {
   const [liveVideoId, setLiveVideoId] = useState<string | null>(null)
   const [liveChecked, setLiveChecked] = useState(false)
   const [userId, setUserId] = useState<string | null>(null)
-  const [captionLang, setCaptionLang] = useState<CaptionLang>('off')
   const idRef = useRef(0)
   const channelRef = useRef<ReturnType<ReturnType<typeof createClient>['channel']> | null>(null)
   const viewRecordedRef = useRef(false)
+  const playerHostRef = useRef<HTMLDivElement>(null)
+  const playerRef = useRef<any>(null)
 
   // 로그인 유저 ID 캐시
   useEffect(() => {
@@ -70,6 +92,44 @@ export default function SanctuaryLive() {
       })
       .catch(() => setLiveChecked(true))
   }, [])
+
+  // YouTube IFrame Player 생성 (영상 ID 확정 시 1회)
+  useEffect(() => {
+    if (!liveVideoId) return
+    let cancelled = false
+    const host = playerHostRef.current
+    if (!host) return
+
+    // React가 추적하지 않는 별도 노드를 만들어 YT.Player가 이를 iframe으로 교체하게 함
+    const mount = document.createElement('div')
+    mount.className = 'w-full h-full'
+    host.appendChild(mount)
+
+    loadYouTubeApi().then(() => {
+      if (cancelled || !window.YT?.Player) return
+      playerRef.current = new window.YT.Player(mount, {
+        videoId: liveVideoId,
+        width: '100%',
+        height: '100%',
+        playerVars: {
+          autoplay: 1,
+          mute: 1,
+          playsinline: 1,
+          rel: 0,
+        },
+      })
+    })
+
+    return () => {
+      cancelled = true
+      try {
+        playerRef.current?.destroy?.()
+      } catch {/* noop */}
+      playerRef.current = null
+      // 남은 노드 정리 (destroy가 iframe을 제거하지 못한 경우 대비)
+      host.innerHTML = ''
+    }
+  }, [liveVideoId])
 
   // 라이브 영상이 있을 때 시청 기록 (하루 1회 upsert)
   useEffect(() => {
@@ -149,14 +209,7 @@ export default function SanctuaryLive() {
           style={{ paddingTop: '56.25%' }}
         >
           {liveVideoId ? (
-            <iframe
-              key={`${liveVideoId}-${captionLang}`}
-              className="absolute inset-0 w-full h-full"
-              src={buildEmbedUrl(liveVideoId, captionLang)}
-              title="주일예배 라이브"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            />
+            <div ref={playerHostRef} className="absolute inset-0 w-full h-full" />
           ) : (
             <div className="absolute inset-0 flex flex-col items-center justify-center text-white gap-3 px-4 text-center">
               <span className="text-6xl">⛪</span>
@@ -186,26 +239,6 @@ export default function SanctuaryLive() {
             ))}
           </div>
         </div>
-
-        {/* ── 자막 언어 선택 ── */}
-        {liveVideoId && (
-          <div className="flex items-center gap-2 justify-center flex-wrap">
-            <span className="text-xs font-semibold text-gray-500 whitespace-nowrap">CC 자막</span>
-            {CAPTION_OPTIONS.map(({ lang, label }) => (
-              <button
-                key={lang}
-                onClick={() => setCaptionLang(lang)}
-                className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors whitespace-nowrap ${
-                  captionLang === lang
-                    ? 'bg-indigo-600 text-white border-indigo-600'
-                    : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-400'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        )}
 
         {/* ── 반응 버튼 ── */}
         <div className="flex gap-3 justify-center">
