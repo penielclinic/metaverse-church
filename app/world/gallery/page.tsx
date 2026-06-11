@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Image from 'next/image'
 
-type Tag = 'all' | 'worship' | 'event' | 'mission' | 'youth' | 'daily'
+type Tag = 'all' | 'worship' | 'event' | 'mission' | 'youth' | 'daily' | 'sensing'
 
 const TAG_LABEL: Record<Tag, string> = {
   all:     '전체',
@@ -13,6 +13,7 @@ const TAG_LABEL: Record<Tag, string> = {
   mission: '선교',
   youth:   '청년부',
   daily:   '일상',
+  sensing: '센싱키즈카페',
 }
 
 const TAG_COLOR: Record<string, string> = {
@@ -21,9 +22,10 @@ const TAG_COLOR: Record<string, string> = {
   mission: 'bg-green-100  text-green-700',
   youth:   'bg-orange-100 text-orange-700',
   daily:   'bg-gray-100   text-gray-600',
+  sensing: 'bg-pink-100   text-pink-700',
 }
 
-const TAGS: Tag[] = ['all', 'worship', 'event', 'mission', 'youth', 'daily']
+const TAGS: Tag[] = ['all', 'worship', 'event', 'mission', 'youth', 'daily', 'sensing']
 
 interface GalleryPhoto {
   id:         number
