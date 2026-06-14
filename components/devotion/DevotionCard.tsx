@@ -40,6 +40,7 @@ export default function DevotionCard({
   onAmen,
   amenLoadingId,
 }: DevotionCardProps) {
+  const [expanded, setExpanded] = useState(false)
   const [showComments, setShowComments] = useState(false)
   const [comments, setComments] = useState<Comment[]>([])
   const [commentText, setCommentText] = useState('')
@@ -124,12 +125,30 @@ export default function DevotionCard({
       </div>
 
       {/* 묵상 내용 */}
-      <p
-        className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap"
-        style={{ wordBreak: 'keep-all' }}
-      >
-        {content}
-      </p>
+      {(() => {
+        const isLong = content.length > 120 || content.split('\n').length > 3
+        return (
+          <div>
+            <p
+              className={[
+                'text-sm text-gray-700 leading-relaxed whitespace-pre-wrap',
+                !expanded && isLong ? 'line-clamp-3' : '',
+              ].join(' ')}
+              style={{ wordBreak: 'keep-all' }}
+            >
+              {content}
+            </p>
+            {isLong && (
+              <button
+                onClick={() => setExpanded(v => !v)}
+                className="mt-1 text-xs text-indigo-500 font-semibold hover:text-indigo-700 transition-colors"
+              >
+                {expanded ? '접기' : '전체 보기'}
+              </button>
+            )}
+          </div>
+        )
+      })()}
 
       {/* 아멘 + 댓글 버튼 */}
       <div className="flex items-center justify-between pt-0.5">
